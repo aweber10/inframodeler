@@ -8,16 +8,19 @@
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
     "@fontsource/jetbrains-mono": "^5.2.8",
     "diagram-js": "^15.22.0",
+    "diagram-js-direct-editing": "^3.5.1",
     "tiny-svg": "^4.1.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.61.1",
     "eslint": "^9.39.5",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.64.0",

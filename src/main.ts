@@ -27,6 +27,7 @@ const modeling = diagram.get<Modeling>('modeling');
 
 const undoButton = document.querySelector<HTMLButtonElement>('#undo');
 const redoButton = document.querySelector<HTMLButtonElement>('#redo');
+const fitViewportButton = document.querySelector<HTMLButtonElement>('#fit-viewport');
 const resetButton = document.querySelector<HTMLButtonElement>('#reset-demo');
 
 function updateHistoryButtons(): void {
@@ -44,6 +45,7 @@ function resetDemo(): void {
 
 undoButton?.addEventListener('click', () => commandStack.undo());
 redoButton?.addEventListener('click', () => commandStack.redo());
+fitViewportButton?.addEventListener('click', () => canvas.zoom('fit-viewport'));
 resetButton?.addEventListener('click', resetDemo);
 eventBus.on('commandStack.changed', updateHistoryButtons);
 

@@ -27,4 +27,14 @@ describe('InfraElementFactory', () => {
     expect(shape.id).toBe('module_webshop');
     expect(shape.businessObject.name).toBe('Webshop');
   });
+
+  it('creates typed connections', () => {
+    const factory = new InfraElementFactory();
+    const connection = factory.createInfraConnection({}, {
+      kind: 'communication',
+      label: 'JDBC'
+    });
+
+    expect(connection.businessObject).toEqual({ kind: 'communication', label: 'JDBC' });
+  });
 });

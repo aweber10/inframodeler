@@ -1,14 +1,15 @@
 import BaseRenderer from 'diagram-js/lib/draw/BaseRenderer';
 import type EventBus from 'diagram-js/lib/core/EventBus';
-import type { Shape } from 'diagram-js/lib/model/Types';
+import type { Connection, Element, Shape } from 'diagram-js/lib/model/Types';
 import { append, attr, create } from 'tiny-svg';
 
-import type { InfraShape } from './InfraElementFactory';
+import type { InfraConnection, InfraShape } from './InfraElementFactory';
 import { isInfraType } from './meta/types';
 
 const FONT = '"JetBrains Mono", monospace';
 const SANS = 'Inter, sans-serif';
 const PRIORITY = 1500;
+const ARROW_MARKER_ID = 'infra-arrow';
 
 function svg(
   parent: SVGElement,
@@ -47,8 +48,8 @@ export default class InfraRenderer extends BaseRenderer {
     super(eventBus, PRIORITY);
   }
 
-  override canRender(element: Shape): boolean {
-    return isInfraType(element.businessObject?.type);
+  override canRender(element: Element): boolean {
+    return isInfraType(element.businessObject?.type) || isInfraConnection(element);
   }
 
   override drawShape(parent: SVGElement, rawShape: Shape): SVGElement {
@@ -124,7 +125,7 @@ export default class InfraRenderer extends BaseRenderer {
         const lines = wrapText(name, 27);
         svg(parent, 'path', { d: `M0,0 H${w - fold} L${w},${fold} V${h} H0 Z`, fill: '#fefce8', stroke: '#a8a29e', 'stroke-width': 1.2 });
         svg(parent, 'path', { d: `M${w - fold},0 V${fold} H${w}`, fill: '#f5f0d8', stroke: '#a8a29e', 'stroke-width': 1.2 });
-        lines.slice(0, 2).forEach((line, index) => svg(parent, 'text', { x: 12, y: 22 + index * 16, 'font-family': SANS, 'font-size': 11.5, fill: '#57534e' }, line));
+        lines.forEach((line, index) => svg(parent, 'text', { x: 12, y: 22 + index * 16, 'font-family': SANS, 'font-size': 11.5, fill: '#57534e' }, line));
         break;
       }
       case 'firewall':
@@ -141,11 +142,79 @@ export default class InfraRenderer extends BaseRenderer {
     return parent.firstElementChild as SVGElement;
   }
 
-  override drawConnection(): SVGElement {
-    throw new Error('Connections are introduced in milestone M2.');
+  override drawConnection(parent: SVGElement, rawConnection: Connection): SVGElement {
+    const connection = rawConnection as InfraConnection;
+    const pathData = this.getConnectionPath(connection);
+    const noteAttachment = connection.businessObject.kind === 'noteAttachment';
+    const path = svg(parent, 'path', {
+      d: pathData,
+      fill: 'none',
+      stroke: '#52606d',
+      'stroke-width': 1.5,
+      ...(noteAttachment
+        ? { 'stroke-dasharray': '4 3' }
+        : { 'marker-end': `url(#${ARROW_MARKER_ID})` })
+    });
+
+    if (!noteAttachment) this.ensureArrowMarker(parent.ownerSVGElement);
+
+    const label = connection.businessObject.label;
+    if (label) this.drawConnectionLabel(parent, connection, label);
+
+    return path;
   }
 
   override getShapePath(shape: Shape): string {
     return `M0,0 h${shape.width} v${shape.height} h-${shape.width} z`;
   }
+
+  override getConnectionPath(connection: Connection): string {
+    return connection.waypoints
+      .map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x},${point.y}`)
+      .join(' ');
+  }
+
+  private ensureArrowMarker(ownerSvg: SVGSVGElement | null): void {
+    if (!ownerSvg || ownerSvg.querySelector(`#${ARROW_MARKER_ID}`)) return;
+    let defs = ownerSvg.querySelector('defs');
+    if (!defs) defs = svg(ownerSvg, 'defs', {}) as SVGDefsElement;
+    const marker = svg(defs, 'marker', {
+      id: ARROW_MARKER_ID,
+      viewBox: '0 0 10 10',
+      refX: 9,
+      refY: 5,
+      markerWidth: 7,
+      markerHeight: 7,
+      orient: 'auto-start-reverse'
+    });
+    svg(marker, 'path', { d: 'M0 0 L10 5 L0 10 z', fill: '#52606d' });
+  }
+
+  private drawConnectionLabel(parent: SVGElement, connection: Connection, label: string): void {
+    const point = getLabelPoint(connection.waypoints);
+    const width = label.length * 6.4 + 12;
+    svg(parent, 'rect', { x: point.x - width / 2, y: point.y - 10, width, height: 18, rx: 9, fill: '#f7f7f5', stroke: '#d3d6da', 'stroke-width': 1 });
+    svg(parent, 'text', { x: point.x, y: point.y, 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-family': FONT, 'font-size': 10.5, fill: '#3e4c59' }, label);
+  }
+}
+
+function isInfraConnection(element: Element): element is InfraConnection {
+  return element.businessObject?.kind === 'communication' || element.businessObject?.kind === 'noteAttachment';
+}
+
+export function getLabelPoint(waypoints: readonly { x: number; y: number }[]): { x: number; y: number } {
+  if (waypoints.length < 2) return waypoints[0] ?? { x: 0, y: 0 };
+
+  let longest = { start: waypoints[0]!, end: waypoints[1]!, length: -1 };
+  for (let index = 1; index < waypoints.length; index += 1) {
+    const start = waypoints[index - 1]!;
+    const end = waypoints[index]!;
+    const length = Math.abs(end.x - start.x) + Math.abs(end.y - start.y);
+    if (length > longest.length) longest = { start, end, length };
+  }
+
+  return {
+    x: (longest.start.x + longest.end.x) / 2,
+    y: (longest.start.y + longest.end.y) / 2
+  };
 }

@@ -1,11 +1,12 @@
 import type Create from 'diagram-js/lib/features/create/Create';
+import type LassoTool from 'diagram-js/lib/features/lasso-tool/LassoTool';
 import type Palette from 'diagram-js/lib/features/palette/Palette';
 import type { PaletteEntries } from 'diagram-js/lib/features/palette/PaletteProvider';
 
 import type InfraElementFactory from './InfraElementFactory';
 import { PALETTE_TYPES, TYPE_DEFINITIONS, type InfraType } from './meta/types';
 
-const ICONS: Record<InfraType, string> = {
+export const INFRA_ICONS: Record<InfraType, string> = {
   zone: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 2"><rect x="2.5" y="4" width="15" height="12" rx="2"/></svg>',
   server: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7l3-3h11v9l-3 3H3z"/><path d="M3 7h11v9M14 7l3-3"/></svg>',
   syssoft: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="3.4"/><path d="M10 3.2v2.2M10 14.6v2.2M3.2 10h2.2M14.6 10h2.2"/></svg>',
@@ -20,24 +21,25 @@ const ICONS: Record<InfraType, string> = {
 };
 
 export default class InfraPalette {
-  static $inject = ['palette', 'create', 'elementFactory'];
+  static $inject = ['palette', 'create', 'elementFactory', 'lassoTool'];
 
   constructor(
     palette: Palette,
     private readonly create: Create,
-    private readonly elementFactory: InfraElementFactory
+    private readonly elementFactory: InfraElementFactory,
+    private readonly lassoTool: LassoTool
   ) {
     palette.registerProvider(this);
   }
 
   getPaletteEntries(): PaletteEntries {
-    return Object.fromEntries(
+    const createEntries = Object.fromEntries(
       PALETTE_TYPES.map((type) => [
         `create.${type}`,
         {
           group: 'create',
           title: `${TYPE_DEFINITIONS[type].title} anlegen`,
-          html: `<span class="entry infra-palette-icon">${ICONS[type]}</span>`,
+          html: `<span class="entry infra-palette-icon">${INFRA_ICONS[type]}</span>`,
           action: {
             dragstart: (event: Event) => this.startCreate(event, type),
             click: (event: Event) => this.startCreate(event, type)
@@ -45,6 +47,16 @@ export default class InfraPalette {
         }
       ])
     );
+
+    return {
+      'tool.lasso': {
+        group: 'tools',
+        title: 'Mehrfachauswahl',
+        html: '<span class="entry infra-palette-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2"><path d="M3 5h14v10H3z"/><path d="M1.5 1.5v4M1.5 1.5h4M18.5 18.5v-4M18.5 18.5h-4"/></svg></span>',
+        action: { click: () => this.lassoTool.toggle() }
+      },
+      ...createEntries
+    };
   }
 
   private startCreate(event: Event, type: InfraType): void {

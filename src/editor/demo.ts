@@ -21,6 +21,13 @@ interface DemoShape {
   parent?: string;
 }
 
+interface DemoConnection {
+  id: string;
+  source: string;
+  target: string;
+  label: string;
+}
+
 const DEMO_SHAPES: DemoShape[] = [
   { id: 'zone_intranet', type: 'zone', name: 'intranet', x: 90, y: 70 },
   { id: 'server_app', type: 'server', name: 'srv-app-01', x: 108, y: 110, parent: 'zone_intranet' },
@@ -33,6 +40,12 @@ const DEMO_SHAPES: DemoShape[] = [
   { id: 'actor_customer', type: 'actor', name: 'Kunde', x: -40, y: 140 },
   { id: 'note_owner', type: 'note', name: 'Betrieb durch Team Webshop', x: 420, y: 330 },
   { id: 'firewall_dmz', type: 'firewall', name: 'FW', x: 660, y: 45 }
+];
+
+const DEMO_CONNECTIONS: DemoConnection[] = [
+  { id: 'connection_jdbc', source: 'module_webshop', target: 'database_customer', label: 'JDBC' },
+  { id: 'connection_https', source: 'actor_customer', target: 'module_webshop', label: 'HTTPS' },
+  { id: 'connection_esb', source: 'module_webshop', target: 'esb_corporate', label: 'REST / SOAP' }
 ];
 
 export function createDemo({ canvas, elementFactory, modeling }: DemoServices): void {
@@ -53,6 +66,16 @@ export function createDemo({ canvas, elementFactory, modeling }: DemoServices): 
     };
 
     created.set(item.id, modeling.createShape(shape, position, parent as Parent) as InfraShape);
+  }
+
+  for (const item of DEMO_CONNECTIONS) {
+    const source = created.get(item.source);
+    const target = created.get(item.target);
+    if (!source || !target) throw new Error(`Missing demo connection endpoint: ${item.id}`);
+    modeling.connect(source, target, elementFactory.createInfraConnection({ id: item.id }, {
+      kind: 'communication',
+      label: item.label
+    }));
   }
 
   canvas.zoom('fit-viewport');

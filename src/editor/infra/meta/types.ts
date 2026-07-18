@@ -19,6 +19,13 @@ export interface InfraBusinessObject {
   name: string;
 }
 
+export type InfraConnectionKind = 'communication' | 'noteAttachment';
+
+export interface InfraConnectionBusinessObject {
+  kind: InfraConnectionKind;
+  label?: string;
+}
+
 export interface InfraTypeDefinition {
   width: number;
   height: number;

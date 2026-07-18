@@ -134,6 +134,36 @@ button:disabled {
   height: 21px;
 }
 
+.infra-context-icon {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  color: #616e7c;
+  place-items: center;
+}
+
+.infra-context-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.infra-context-icon:hover {
+  color: #0f766e;
+}
+
+.infra-context-icon.danger:hover {
+  color: #c0392b;
+}
+
+.djs-direct-editing-parent {
+  z-index: 20;
+  box-shadow: 0 2px 8px rgb(31 41 51 / 15%);
+}
+
+.djs-direct-editing-content {
+  min-height: 100%;
+}
+
 .djs-shape .djs-hit {
   cursor: move;
 }
@@ -168,6 +198,10 @@ button:disabled {
 
   .app-actions {
     gap: 4px;
+  }
+
+  #fit-viewport {
+    display: none;
   }
 
   button {
