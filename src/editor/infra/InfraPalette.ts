@@ -1,0 +1,53 @@
+import type Create from 'diagram-js/lib/features/create/Create';
+import type Palette from 'diagram-js/lib/features/palette/Palette';
+import type { PaletteEntries } from 'diagram-js/lib/features/palette/PaletteProvider';
+
+import type InfraElementFactory from './InfraElementFactory';
+import { PALETTE_TYPES, TYPE_DEFINITIONS, type InfraType } from './meta/types';
+
+const ICONS: Record<InfraType, string> = {
+  zone: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 2"><rect x="2.5" y="4" width="15" height="12" rx="2"/></svg>',
+  server: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7l3-3h11v9l-3 3H3z"/><path d="M3 7h11v9M14 7l3-3"/></svg>',
+  syssoft: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="3.4"/><path d="M10 3.2v2.2M10 14.6v2.2M3.2 10h2.2M14.6 10h2.2"/></svg>',
+  module: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="4" width="11" height="12" rx="1.5"/><rect x="3" y="7" width="6" height="3"/><rect x="3" y="12" width="6" height="3"/></svg>',
+  db: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="10" cy="5" rx="6" ry="2.5"/><path d="M4 5v10c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5V5"/></svg>',
+  esb: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="7" width="16" height="6" rx="3"/><path d="M6 10h8M12 8l2 2-2 2"/></svg>',
+  firewall: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="6" y="2" width="8" height="16" rx="1"/><path d="M6 6h8M6 10h8M6 14h8M10 2v4M8 6v4M12 6v4"/></svg>',
+  extsys: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="10" cy="10" r="7"/><ellipse cx="10" cy="10" rx="3" ry="7"/><path d="M3 10h14"/></svg>',
+  umsystem: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 2.5l6.5 3.2v8.6L10 17.5l-6.5-3.2V5.7z"/><path d="M3.5 5.7L10 9l6.5-3.3M10 9v8.5"/></svg>',
+  actor: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="4.6" r="2.6"/><path d="M10 7.2v5.2M4.8 9.8h10.4M10 12.4l-3.6 4.8M10 12.4l3.6 4.8"/></svg>',
+  note: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 3h9l3 3v11H4z"/><path d="M13 3v3h3"/></svg>'
+};
+
+export default class InfraPalette {
+  static $inject = ['palette', 'create', 'elementFactory'];
+
+  constructor(
+    palette: Palette,
+    private readonly create: Create,
+    private readonly elementFactory: InfraElementFactory
+  ) {
+    palette.registerProvider(this);
+  }
+
+  getPaletteEntries(): PaletteEntries {
+    return Object.fromEntries(
+      PALETTE_TYPES.map((type) => [
+        `create.${type}`,
+        {
+          group: 'create',
+          title: `${TYPE_DEFINITIONS[type].title} anlegen`,
+          html: `<span class="entry infra-palette-icon">${ICONS[type]}</span>`,
+          action: {
+            dragstart: (event: Event) => this.startCreate(event, type),
+            click: (event: Event) => this.startCreate(event, type)
+          }
+        }
+      ])
+    );
+  }
+
+  private startCreate(event: Event, type: InfraType): void {
+    this.create.start(event, this.elementFactory.createInfraShape(type));
+  }
+}

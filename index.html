@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="InfraModeler Editor-Fundament" />
+    <title>InfraModeler</title>
+  </head>
+  <body>
+    <div id="app">
+      <header class="app-header">
+        <div>
+          <h1>InfraModeler</h1>
+          <p>Deployment &amp; Infrastruktur</p>
+        </div>
+        <div class="app-actions">
+          <button id="undo" type="button">Rückgängig</button>
+          <button id="redo" type="button">Wiederholen</button>
+          <button id="reset-demo" type="button">Demo zurücksetzen</button>
+        </div>
+      </header>
+      <main id="canvas" aria-label="Diagramm-Editor"></main>
+      <footer class="app-footer">
+        <span><b>Palette</b> Element aufziehen</span>
+        <span><b>Ziehen</b> verschieben und andocken</span>
+        <span><b>Mausrad</b> zoomen</span>
+        <span><b>Leere Fläche</b> verschieben</span>
+        <span><b>Strg/Cmd+Z</b> rückgängig</span>
+      </footer>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
