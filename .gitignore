@@ -1,0 +1,71 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100/
+.Spotlight-V100/
+.TemporaryItems/
+.Trashes/
+.fseventsd/
+
+# Node.js dependencies and package-manager caches
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# Web build output and caches
+dist/
+build/
+.cache/
+.parcel-cache/
+.vite/
+.next/
+.nuxt/
+.output/
+.svelte-kit/
+coverage/
+
+# Rust / Tauri build output
+target/
+src-tauri/target/
+
+# Logs and temporary files
+*.log
+*.pid
+*.seed
+*.tmp
+*.temp
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local environment and secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Editors and IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Test and tooling caches
+.eslintcache
+.stylelintcache
+.turbo/
+.nyc_output/
+playwright-report/
+test-results/
+
+# Tauri signing material
+*.key
+*.pem
