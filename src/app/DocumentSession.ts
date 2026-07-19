@@ -29,6 +29,14 @@ export default class DocumentSession {
     return this.state.currentSnapshot !== this.state.savedSnapshot;
   }
 
+  get savedSnapshot(): string {
+    return this.state.savedSnapshot;
+  }
+
+  get currentSnapshot(): string {
+    return this.state.currentSnapshot;
+  }
+
   update(snapshot: string): void {
     this.state.currentSnapshot = snapshot;
   }

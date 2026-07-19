@@ -42,5 +42,7 @@ export default {
   infraResizeBehavior: ['type', InfraResizeBehavior],
   infraDirectEditing: ['type', InfraDirectEditing],
   infraContextPad: ['type', InfraContextPad],
+  connectionDocking: ['type', CroppingConnectionDocking],
   layouter: ['type', InfraLayouter]
 };
+import CroppingConnectionDocking from 'diagram-js/lib/layout/CroppingConnectionDocking';

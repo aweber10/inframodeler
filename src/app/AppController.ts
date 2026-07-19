@@ -8,8 +8,11 @@ import type EditorActions from 'diagram-js/lib/features/editor-actions/EditorAct
 import { createDemo } from '../editor/demo';
 import type InfraElementFactory from '../editor/infra/InfraElementFactory';
 import DocumentSession from './DocumentSession';
+import { exportSvg as renderSvg } from './export/exportSvg';
 import type { PlatformAdapter, AppAction } from './platform/PlatformAdapter';
 import RecentFiles from './RecentFiles';
+import { parseRecovery, RECOVERY_VERSION, stringifyRecovery } from './Recovery';
+import type RecoveryDialog from './RecoveryDialog';
 import { exportDiagram } from './serialization/exportDiagram';
 import type { DiagramFile } from './serialization/format';
 import type { ExtensionFields } from './serialization/format';
@@ -26,6 +29,7 @@ const EMPTY_FILE: DiagramFile = {
   elements: [],
   connections: []
 };
+const RECOVERY_INTERVAL_MS = 60_000;
 
 export default class AppController {
   private readonly canvas: Canvas;
@@ -43,6 +47,7 @@ export default class AppController {
     private readonly diagram: Diagram,
     private readonly platform: PlatformAdapter,
     private readonly unsavedDialog: UnsavedChangesDialog,
+    private readonly recoveryDialog: RecoveryDialog,
     private readonly recentContainer: HTMLElement | null
   ) {
     this.canvas = diagram.get('canvas');
@@ -69,6 +74,8 @@ export default class AppController {
       }
       return false;
     });
+    await this.offerRecovery();
+    window.setInterval(() => void this.persistRecovery(), RECOVERY_INTERVAL_MS);
     this.renderRecentFiles();
     await this.refreshState();
   }
@@ -88,6 +95,7 @@ export default class AppController {
         case 'copy': this.triggerEditorAction('copy'); break;
         case 'paste': this.triggerEditorAction('paste'); break;
         case 'delete': this.triggerEditorAction('removeSelection'); break;
+        case 'exportSvg': await this.exportSvg(); break;
       }
     } catch (error) {
       await this.platform.showError('Aktion fehlgeschlagen', errorMessage(error));
@@ -99,6 +107,7 @@ export default class AppController {
     importDiagram(this.diagram, EMPTY_FILE);
     this.documentExtensions = undefined;
     this.session.reset(stringifyDiagramFile(EMPTY_FILE), null, 'Unbenannt');
+    await this.platform.removeRecovery();
     await this.refreshState();
   }
 
@@ -140,6 +149,7 @@ export default class AppController {
     const snapshot = this.currentSnapshot();
     await this.platform.writeText(path, snapshot);
     this.session.saved(snapshot, path);
+    await this.platform.removeRecovery();
     if (this.platform.isDesktop) this.recentFiles.add(path);
     this.renderRecentFiles();
     await this.refreshState();
@@ -167,6 +177,7 @@ export default class AppController {
     const choice = await this.unsavedDialog.show();
     if (choice === 'cancel') return false;
     if (choice === 'save') return this.save();
+    await this.platform.removeRecovery();
     return true;
   }
 
@@ -176,6 +187,12 @@ export default class AppController {
       this.session.title,
       this.documentExtensions
     ));
+  }
+
+  private async exportSvg(): Promise<void> {
+    const exported = await renderSvg(this.canvas, this.elementRegistry);
+    const path = await this.platform.pickExportPath(exportFileName(this.session.title));
+    if (path) await this.platform.writeText(ensureExportExtension(path), exported.svg);
   }
 
   private async refreshState(): Promise<void> {
@@ -215,6 +232,44 @@ export default class AppController {
   private triggerEditorAction(action: string): void {
     if (this.editorActions.isRegistered(action)) this.editorActions.trigger(action, undefined);
   }
+
+  private async persistRecovery(): Promise<void> {
+    if (!this.session.dirty) return;
+    try {
+      await this.platform.writeRecovery(stringifyRecovery({
+        recoveryVersion: RECOVERY_VERSION,
+        originalPath: this.session.path,
+        title: this.session.title,
+        savedSnapshot: this.session.savedSnapshot,
+        currentSnapshot: this.session.currentSnapshot,
+        timestamp: new Date().toISOString()
+      }));
+    } catch (error) {
+      console.error('Recovery konnte nicht gespeichert werden.', error);
+    }
+  }
+
+  private async offerRecovery(): Promise<void> {
+    const source = await this.platform.readRecovery();
+    if (!source) return;
+    try {
+      const recovery = parseRecovery(source);
+      const choice = await this.recoveryDialog.show(recovery.timestamp);
+      if (choice === 'discard') {
+        await this.platform.removeRecovery();
+        return;
+      }
+      const currentFile = parseDiagramFile(recovery.currentSnapshot);
+      importDiagram(this.diagram, currentFile);
+      this.documentExtensions = currentFile.extensions;
+      this.session.reset(recovery.savedSnapshot, recovery.originalPath, recovery.title);
+      this.session.update(recovery.currentSnapshot);
+      await this.refreshState();
+    } catch (error) {
+      await this.platform.removeRecovery();
+      await this.platform.showError('Recovery fehlgeschlagen', errorMessage(error));
+    }
+  }
 }
 
 function ensureExtension(path: string): string {
@@ -232,4 +287,13 @@ function fileName(path: string): string {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function exportFileName(title: string): string {
+  const base = title === 'Unbenannt' ? 'diagramm' : title.toLowerCase().replace(/[^a-z0-9_-]+/g, '-');
+  return `${base}.svg`;
+}
+
+function ensureExportExtension(path: string): string {
+  return path.toLowerCase().endsWith('.svg') ? path : `${path}.svg`;
 }

@@ -60,7 +60,7 @@ export default class InfraDirectEditing {
       },
       options: {
         centerVertically: shape.businessObject.type !== 'note',
-        autoResize: shape.businessObject.type === 'note'
+        autoResize: shape.businessObject.type === 'note' || shape.businessObject.type === 'syssoft'
       }
     };
   }

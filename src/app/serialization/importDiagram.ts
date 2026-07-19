@@ -8,6 +8,7 @@ import type { Parent } from 'diagram-js/lib/model/Types';
 import type InfraElementFactory from '../../editor/infra/InfraElementFactory';
 import type { InfraShape } from '../../editor/infra/InfraElementFactory';
 import type { DiagramFile } from './format';
+import { normalizeDocking } from '../../editor/infra/InfraLayouter';
 
 export function importDiagram(diagram: Diagram, file: DiagramFile): void {
   diagram.clear();
@@ -65,7 +66,8 @@ export function importDiagram(diagram: Diagram, file: DiagramFile): void {
       extensions: record.extensions,
       waypointExtensions: record.waypoints.map(({ extensions }) => extensions)
     });
-    modeling.connect(source, target, connection);
+    const createdConnection = modeling.connect(source, target, connection);
+    modeling.updateWaypoints(createdConnection, normalizeDocking(createdConnection));
   }
 
   selection.select([]);

@@ -28,9 +28,18 @@ export default class BrowserPlatform implements PlatformAdapter {
   }
 
   async writeText(path: string, contents: string): Promise<void> {
+    const type = path.endsWith('.svg') ? 'image/svg+xml' : 'application/json';
+    this.download(path, new Blob([contents], { type }));
+  }
+
+  async pickExportPath(suggestedName: string): Promise<string> {
+    return suggestedName;
+  }
+
+  private download(path: string, blob: Blob): void {
     const anchor = document.createElement('a');
     anchor.download = path;
-    anchor.href = URL.createObjectURL(new Blob([contents], { type: 'application/json' }));
+    anchor.href = URL.createObjectURL(blob);
     anchor.click();
     URL.revokeObjectURL(anchor.href);
   }
@@ -57,5 +66,17 @@ export default class BrowserPlatform implements PlatformAdapter {
 
   async closeWindow(): Promise<void> {
     window.close();
+  }
+
+  async readRecovery(): Promise<string | null> {
+    return localStorage.getItem('inframodeler.browserRecovery');
+  }
+
+  async writeRecovery(contents: string): Promise<void> {
+    localStorage.setItem('inframodeler.browserRecovery', contents);
+  }
+
+  async removeRecovery(): Promise<void> {
+    localStorage.removeItem('inframodeler.browserRecovery');
   }
 }

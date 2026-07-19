@@ -1,5 +1,6 @@
 import BaseRenderer from 'diagram-js/lib/draw/BaseRenderer';
 import type EventBus from 'diagram-js/lib/core/EventBus';
+import type CroppingConnectionDocking from 'diagram-js/lib/layout/CroppingConnectionDocking';
 import type { Connection, Element, Shape } from 'diagram-js/lib/model/Types';
 import { append, attr, create } from 'tiny-svg';
 
@@ -42,9 +43,9 @@ function wrapText(text: string, maxCharacters: number): string[] {
 }
 
 export default class InfraRenderer extends BaseRenderer {
-  static $inject = ['eventBus'];
+  static $inject = ['eventBus', 'connectionDocking'];
 
-  constructor(eventBus: EventBus) {
+  constructor(eventBus: EventBus, private readonly connectionDocking: CroppingConnectionDocking) {
     super(eventBus, PRIORITY);
   }
 
@@ -144,7 +145,8 @@ export default class InfraRenderer extends BaseRenderer {
 
   override drawConnection(parent: SVGElement, rawConnection: Connection): SVGElement {
     const connection = rawConnection as InfraConnection;
-    const pathData = this.getConnectionPath(connection);
+    const visibleWaypoints = this.connectionDocking.getCroppedWaypoints(connection, connection.source, connection.target);
+    const pathData = connectionPath(visibleWaypoints, false);
     const noteAttachment = connection.businessObject.kind === 'noteAttachment';
     const path = svg(parent, 'path', {
       d: pathData,
@@ -159,19 +161,17 @@ export default class InfraRenderer extends BaseRenderer {
     if (!noteAttachment) this.ensureArrowMarker(parent.ownerSVGElement);
 
     const label = connection.businessObject.label;
-    if (label) this.drawConnectionLabel(parent, connection, label);
+    if (label) this.drawConnectionLabel(parent, visibleWaypoints, label);
 
     return path;
   }
 
   override getShapePath(shape: Shape): string {
-    return `M0,0 h${shape.width} v${shape.height} h-${shape.width} z`;
+    return `M${shape.x},${shape.y} h${shape.width} v${shape.height} h-${shape.width} z`;
   }
 
   override getConnectionPath(connection: Connection): string {
-    return connection.waypoints
-      .map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x},${point.y}`)
-      .join(' ');
+    return connectionPath(connection.waypoints, true);
   }
 
   private ensureArrowMarker(ownerSvg: SVGSVGElement | null): void {
@@ -190,13 +190,22 @@ export default class InfraRenderer extends BaseRenderer {
     svg(marker, 'path', { d: 'M0 0 L10 5 L0 10 z', fill: '#52606d' });
   }
 
-  private drawConnectionLabel(parent: SVGElement, connection: Connection, label: string): void {
-    const point = getLabelPoint(connection.waypoints);
+  private drawConnectionLabel(parent: SVGElement, waypoints: Connection['waypoints'], label: string): void {
+    const point = getLabelPoint(waypoints);
     const width = label.length * 6.4 + 12;
     svg(parent, 'rect', { x: point.x - width / 2, y: point.y - 10, width, height: 18, rx: 9, fill: '#f7f7f5', stroke: '#d3d6da', 'stroke-width': 1 });
     svg(parent, 'text', { x: point.x, y: point.y, 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-family': FONT, 'font-size': 10.5, fill: '#3e4c59' }, label);
   }
 }
+
+function connectionPath(waypoints: Connection['waypoints'], useOriginal: boolean): string {
+  return waypoints.map((waypoint, index) => {
+    const original = (waypoint as typeof waypoint & { original?: typeof waypoint }).original;
+    const point = useOriginal && original ? original : waypoint;
+    return `${index === 0 ? 'M' : 'L'}${point.x},${point.y}`;
+  }).join(' ');
+}
+
 
 function isInfraConnection(element: Element): element is InfraConnection {
   return element.businessObject?.kind === 'communication' || element.businessObject?.kind === 'noteAttachment';

@@ -7,8 +7,10 @@ import 'diagram-js/assets/diagram-js.css';
 import './styles.css';
 
 import AppController from './app/AppController';
+import EmptyCanvasHelp from './app/EmptyCanvasHelp';
 import BrowserPlatform from './app/platform/BrowserPlatform';
 import type { PlatformAdapter } from './app/platform/PlatformAdapter';
+import RecoveryDialog from './app/RecoveryDialog';
 import UnsavedChangesDialog from './app/UnsavedChangesDialog';
 import { createInfraModeler } from './editor/InfraModeler';
 
@@ -17,8 +19,13 @@ async function bootstrap(): Promise<void> {
   if (!container) throw new Error('Editor container not found.');
 
   const diagram = createInfraModeler(container);
+  const emptyHelp = document.querySelector<HTMLElement>('#empty-canvas-help');
+  if (!emptyHelp) throw new Error('Empty canvas help not found.');
+  new EmptyCanvasHelp(diagram.get('elementRegistry'), emptyHelp, diagram.get('eventBus'));
   const dialog = document.querySelector<HTMLDialogElement>('#unsaved-dialog');
   if (!dialog) throw new Error('Unsaved changes dialog not found.');
+  const recoveryDialog = document.querySelector<HTMLDialogElement>('#recovery-dialog');
+  if (!recoveryDialog) throw new Error('Recovery dialog not found.');
 
   const platform: PlatformAdapter = window.__TAURI_INTERNALS__
     ? new (await import('./app/platform/TauriPlatform')).default()
@@ -28,6 +35,7 @@ async function bootstrap(): Promise<void> {
     diagram,
     platform,
     new UnsavedChangesDialog(dialog),
+    new RecoveryDialog(recoveryDialog),
     document.querySelector('#recent-files')
   );
   await controller.start();

@@ -17,6 +17,7 @@
           <button type="button" data-app-action="new">Neu</button>
           <button type="button" data-app-action="open">Öffnen</button>
           <button type="button" data-app-action="save">Speichern</button>
+          <button type="button" data-app-action="exportSvg">SVG</button>
           <button id="undo" type="button" data-app-action="undo">Rückgängig</button>
           <button id="redo" type="button" data-app-action="redo">Wiederholen</button>
           <button id="fit-viewport" type="button" data-app-action="fitViewport">Diagramm einpassen</button>
@@ -24,7 +25,13 @@
         </div>
       </header>
       <nav id="recent-files" class="recent-files" aria-label="Zuletzt geöffnet" hidden></nav>
-      <main id="canvas" aria-label="Diagramm-Editor"></main>
+      <main id="canvas" aria-label="Diagramm-Editor">
+        <section id="empty-canvas-help" class="empty-canvas-help" aria-label="Einstiegshilfe">
+          <p><b>1</b> Element aus der Palette auf die Fläche ziehen</p>
+          <p><b>2</b> Element auswählen und passende Aktion im Context Pad wählen</p>
+          <p><b>3</b> Freie Fläche ziehen, mit dem Mausrad zoomen</p>
+        </section>
+      </main>
       <footer class="app-footer">
         <span><b>Palette</b> Element aufziehen</span>
         <span><b>Ziehen</b> verschieben und andocken</span>
@@ -40,6 +47,14 @@
         <button type="button" data-choice="cancel">Abbrechen</button>
         <button type="button" data-choice="discard">Verwerfen</button>
         <button type="button" data-choice="save" class="primary">Speichern</button>
+      </div>
+    </dialog>
+    <dialog id="recovery-dialog" class="app-dialog">
+      <h2>Ungespeicherten Stand wiederherstellen?</h2>
+      <p>InfraModeler hat einen Arbeitsstand vom <span data-recovery-time></span> gefunden.</p>
+      <div class="dialog-actions">
+        <button type="button" data-recovery="discard">Verwerfen</button>
+        <button type="button" data-recovery="restore" class="primary">Wiederherstellen</button>
       </div>
     </dialog>
     <script type="module" src="/src/main.ts"></script>

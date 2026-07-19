@@ -1,29 +1,36 @@
 import type { Element } from 'diagram-js/lib/model/Types';
+import type Modeling from 'diagram-js/lib/features/modeling/Modeling';
 
 import type { InfraConnection, InfraShape } from '../InfraElementFactory';
+import { TYPE_DEFINITIONS } from '../meta/types';
 
 export interface UpdateTextContext {
   element: InfraShape | InfraConnection;
   value: string;
   oldValue?: string;
-  oldHeight?: number;
 }
 
 export default class UpdateTextHandler {
+  static $inject = ['modeling'];
+
+  constructor(private readonly modeling: Modeling) {}
+
   execute(context: UpdateTextContext): Element[] {
     const { element } = context;
     context.oldValue = getValue(element);
-    context.oldHeight = isShape(element) ? element.height : undefined;
     setValue(element, context.value);
-    resizeNote(element);
     return [element];
+  }
+
+  postExecute(context: UpdateTextContext): void {
+    if (!isShape(context.element)) return;
+    const bounds = getTextBounds(context.element);
+    if (!bounds) return;
+    this.modeling.resizeShape(context.element, bounds);
   }
 
   revert(context: UpdateTextContext): Element[] {
     setValue(context.element, context.oldValue ?? '');
-    if (isShape(context.element) && context.oldHeight !== undefined) {
-      context.element.height = context.oldHeight;
-    }
     return [context.element];
   }
 }
@@ -39,10 +46,21 @@ function setValue(element: InfraShape | InfraConnection, value: string): void {
   else element.businessObject.label = value;
 }
 
-function resizeNote(element: InfraShape | InfraConnection): void {
-  if (!isShape(element) || element.businessObject.type !== 'note') return;
-  const lineCount = wrapText(element.businessObject.name, 27).length;
-  element.height = Math.max(56, lineCount * 16 + 24);
+function getTextBounds(element: InfraShape) {
+  let width = element.width;
+  let height = element.height;
+  if (element.businessObject.type === 'note') {
+    height = Math.max(56, wrapText(element.businessObject.name, 27).length * 16 + 24);
+  }
+  if (element.businessObject.type === 'syssoft') {
+    const titleWidth = 32 + element.businessObject.name.length * 6.9 + 12;
+    const childrenRight = element.children
+      .filter(isChildShape)
+      .reduce((right, child) => Math.max(right, child.x + child.width - element.x + 14), 0);
+    width = Math.max(TYPE_DEFINITIONS.syssoft.width, Math.ceil(titleWidth), childrenRight);
+  }
+  if (width === element.width && height === element.height) return undefined;
+  return { x: element.x, y: element.y, width, height };
 }
 
 function wrapText(text: string, maxCharacters: number): string[] {
@@ -62,4 +80,8 @@ function wrapText(text: string, maxCharacters: number): string[] {
 
 function isShape(element: InfraShape | InfraConnection): element is InfraShape {
   return 'width' in element;
+}
+
+function isChildShape(element: Element): element is InfraShape {
+  return 'width' in element && 'height' in element;
 }

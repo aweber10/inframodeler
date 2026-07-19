@@ -1,4 +1,5 @@
 use std::{
+    fs,
     path::{Path, PathBuf},
     sync::Mutex,
 };
@@ -10,6 +11,7 @@ use tauri::{
 use tauri_plugin_fs::FsExt;
 
 const FILE_SUFFIX: &str = ".imod.json";
+const RECOVERY_FILE: &str = "recovery.json";
 
 struct InitialPath(Mutex<Option<String>>);
 
@@ -26,6 +28,36 @@ fn allow_diagram_path(app: AppHandle, path: String) -> Result<(), String> {
     app.fs_scope()
         .allow_file(path)
         .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn read_recovery(app: AppHandle) -> Result<Option<String>, String> {
+    let path = recovery_path(&app)?;
+    match fs::read_to_string(path) {
+        Ok(contents) => Ok(Some(contents)),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(error) => Err(error.to_string()),
+    }
+}
+
+#[tauri::command]
+fn write_recovery(app: AppHandle, contents: String) -> Result<(), String> {
+    let path = recovery_path(&app)?;
+    let directory = path.parent().ok_or("Ungültiger Recovery-Pfad")?;
+    fs::create_dir_all(directory).map_err(|error| error.to_string())?;
+    let temporary = path.with_extension("tmp");
+    fs::write(&temporary, contents).map_err(|error| error.to_string())?;
+    fs::rename(temporary, path).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn remove_recovery(app: AppHandle) -> Result<(), String> {
+    let path = recovery_path(&app)?;
+    match fs::remove_file(path) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(error.to_string()),
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -53,7 +85,10 @@ pub fn run() {
         .manage(InitialPath(Mutex::new(initial_path)))
         .invoke_handler(tauri::generate_handler![
             take_initial_path,
-            allow_diagram_path
+            allow_diagram_path,
+            read_recovery,
+            write_recovery,
+            remove_recovery
         ])
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
@@ -102,6 +137,8 @@ fn build_menu(app: &AppHandle) -> tauri::Result<tauri::menu::Menu<tauri::Wry>> {
                 .accelerator("CmdOrCtrl+Shift+S")
                 .build(app)?,
         )
+        .separator()
+        .item(&MenuItemBuilder::with_id("exportSvg", "Als SVG exportieren …").build(app)?)
         .separator()
         .item(&MenuItemBuilder::with_id("example", "Beispieldiagramm öffnen").build(app)?)
         .build()?;
@@ -171,6 +208,7 @@ fn menu_action(id: &str) -> Option<&'static str> {
         "paste" => Some("paste"),
         "delete" => Some("delete"),
         "fitViewport" => Some("fitViewport"),
+        "exportSvg" => Some("exportSvg"),
         _ => None,
     }
 }
@@ -193,4 +231,11 @@ fn emit_open_path(app: &AppHandle, path: PathBuf) {
     if let Some(path) = path.to_str() {
         let _ = app.emit("open-path", path);
     }
+}
+
+fn recovery_path(app: &AppHandle) -> Result<PathBuf, String> {
+    app.path()
+        .app_data_dir()
+        .map(|directory| directory.join(RECOVERY_FILE))
+        .map_err(|error| error.to_string())
 }

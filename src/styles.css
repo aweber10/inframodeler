@@ -79,6 +79,23 @@ body {
   font-size: 13px;
 }
 
+.app-dialog label {
+  display: block;
+  margin-bottom: 6px;
+  color: #52606d;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.app-dialog select {
+  width: 100%;
+  margin-bottom: 22px;
+  padding: 8px;
+  border: 1px solid #bcccdc;
+  border-radius: 6px;
+  font: 13px Inter, sans-serif;
+}
+
 .dialog-actions {
   display: flex;
   justify-content: flex-end;
@@ -155,6 +172,45 @@ button:disabled {
   background-color: #f7f7f5;
   background-image: radial-gradient(#d9d8d3 1.15px, transparent 1.15px);
   background-size: 22px 22px;
+}
+
+.empty-canvas-help {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  width: min(470px, calc(100% - 150px));
+  padding: 18px 22px;
+  color: #52606d;
+  background: rgb(255 255 255 / 78%);
+  border: 1px solid #d9e2ec;
+  border-radius: 10px;
+  box-shadow: 0 8px 26px rgb(31 41 51 / 8%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  backdrop-filter: blur(5px);
+}
+
+.empty-canvas-help[hidden] {
+  display: none;
+}
+
+.empty-canvas-help p {
+  margin: 7px 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.empty-canvas-help b {
+  display: inline-grid;
+  width: 22px;
+  height: 22px;
+  margin-right: 8px;
+  color: #fff;
+  background: #0f766e;
+  border-radius: 50%;
+  place-items: center;
+  font: 600 11px "JetBrains Mono", monospace;
 }
 
 .djs-container {

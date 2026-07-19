@@ -20,9 +20,16 @@ export default class TauriPlatform implements PlatformAdapter {
   }
 
   async writeText(path: string, contents: string): Promise<void> {
-    await this.allowPath(path);
     const { writeTextFile } = await import('@tauri-apps/plugin-fs');
     await writeTextFile(path, contents);
+  }
+
+  async pickExportPath(suggestedName: string): Promise<string | null> {
+    const { save } = await import('@tauri-apps/plugin-dialog');
+    return save({
+      defaultPath: suggestedName,
+      filters: [{ name: 'SVG-Grafik', extensions: ['svg'] }]
+    });
   }
 
   async setWindowTitle(title: string): Promise<void> {
@@ -60,6 +67,21 @@ export default class TauriPlatform implements PlatformAdapter {
   async closeWindow(): Promise<void> {
     const { getCurrentWindow } = await import('@tauri-apps/api/window');
     await getCurrentWindow().destroy();
+  }
+
+  async readRecovery(): Promise<string | null> {
+    const { invoke } = await import('@tauri-apps/api/core');
+    return invoke<string | null>('read_recovery');
+  }
+
+  async writeRecovery(contents: string): Promise<void> {
+    const { invoke } = await import('@tauri-apps/api/core');
+    await invoke('write_recovery', { contents });
+  }
+
+  async removeRecovery(): Promise<void> {
+    const { invoke } = await import('@tauri-apps/api/core');
+    await invoke('remove_recovery');
   }
 
   private async allowPath(path: string): Promise<void> {

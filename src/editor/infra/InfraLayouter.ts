@@ -27,3 +27,14 @@ export default class InfraLayouter extends BaseLayouter {
     return connectRectangles(source, target, hints.connectionStart, hints.connectionEnd, layoutHints);
   }
 }
+
+export function normalizeDocking(connection: Connection): Point[] {
+  const source = connection.source as Shape;
+  const target = connection.target as Shape;
+  if (!connection.waypoints?.length) return connectRectangles(source, target);
+  return repairConnection(source, target, undefined, undefined, connection.waypoints, {
+    preferredLayouts: ['h:h', 'v:v'],
+    connectionStart: true,
+    connectionEnd: true
+  });
+}
