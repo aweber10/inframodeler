@@ -19,6 +19,11 @@ interface TextContext {
   element: Element;
 }
 
+interface DeleteShapeContext {
+  shape: Shape;
+  infraOldParent?: Shape;
+}
+
 export default class InfraFitBehavior extends CommandInterceptor {
   static override $inject = ['eventBus', 'modeling'];
 
@@ -30,6 +35,15 @@ export default class InfraFitBehavior extends CommandInterceptor {
     });
     this.postExecute('elements.delete', ({ context }: { context: DeleteContext }) => {
       this.fitAll(context.infraOldParents ?? []);
+    });
+
+    this.preExecute('shape.delete', ({ context }: { context: DeleteShapeContext }) => {
+      if (context.shape.parent && isShape(context.shape.parent)) {
+        context.infraOldParent = context.shape.parent;
+      }
+    });
+    this.postExecute('shape.delete', ({ context }: { context: DeleteShapeContext }) => {
+      if (context.infraOldParent) this.fit(context.infraOldParent);
     });
 
     this.preExecute('elements.move', ({ context }: { context: MoveContext }) => {

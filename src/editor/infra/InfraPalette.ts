@@ -1,3 +1,5 @@
+import type Canvas from 'diagram-js/lib/core/Canvas';
+import type EventBus from 'diagram-js/lib/core/EventBus';
 import type Create from 'diagram-js/lib/features/create/Create';
 import type LassoTool from 'diagram-js/lib/features/lasso-tool/LassoTool';
 import type Palette from 'diagram-js/lib/features/palette/Palette';
@@ -21,15 +23,20 @@ export const INFRA_ICONS: Record<InfraType, string> = {
 };
 
 export default class InfraPalette {
-  static $inject = ['palette', 'create', 'elementFactory', 'lassoTool'];
+  static $inject = ['palette', 'canvas', 'create', 'elementFactory', 'eventBus', 'lassoTool'];
+
+  private activeCreateType: InfraType | null = null;
 
   constructor(
     palette: Palette,
+    private readonly canvas: Canvas,
     private readonly create: Create,
     private readonly elementFactory: InfraElementFactory,
+    eventBus: EventBus,
     private readonly lassoTool: LassoTool
   ) {
     palette.registerProvider(this);
+    eventBus.on(['create.cancel', 'create.cleanup', 'create.end'], () => this.clearCreateHighlight());
   }
 
   getPaletteEntries(): PaletteEntries {
@@ -60,6 +67,23 @@ export default class InfraPalette {
   }
 
   private startCreate(event: Event, type: InfraType): void {
+    this.setCreateHighlight(type);
     this.create.start(event, this.elementFactory.createInfraShape(type));
+  }
+
+  private setCreateHighlight(type: InfraType): void {
+    this.clearCreateHighlight();
+    this.activeCreateType = type;
+    this.getCreateEntry(type)?.classList.add('infra-active-entry');
+  }
+
+  private clearCreateHighlight(): void {
+    if (!this.activeCreateType) return;
+    this.getCreateEntry(this.activeCreateType)?.classList.remove('infra-active-entry');
+    this.activeCreateType = null;
+  }
+
+  private getCreateEntry(type: InfraType): HTMLElement | null {
+    return this.canvas.getContainer().querySelector(`[data-action="create.${type}"]`);
   }
 }

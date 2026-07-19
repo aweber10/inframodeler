@@ -2,7 +2,7 @@ import type { InfraType } from './types';
 
 export const CONTAINS: Readonly<Partial<Record<InfraType, readonly InfraType[]>>> = {
   zone: ['server', 'db', 'esb', 'firewall', 'extsys', 'umsystem', 'actor', 'note'],
-  server: ['syssoft', 'module'],
+  server: ['syssoft', 'module', 'db'],
   syssoft: ['module']
 };
 

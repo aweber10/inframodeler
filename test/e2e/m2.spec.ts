@@ -95,3 +95,67 @@ test('draws a connection from the context pad to a target', async ({ page }) => 
 
   await expect(page.locator('.djs-connection')).toHaveCount(4);
 });
+
+test('creates databases inside servers', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('[data-app-action="example"]').click();
+
+  const server = page.locator('[data-element-id="server_app"]');
+  await server.locator(':scope > .djs-hit').click({ position: { x: 45, y: 22 }, force: true });
+  await page.locator('.djs-context-pad [data-action="append.db"]').click();
+
+  const serverChildren = server.locator('xpath=..').locator(':scope > .djs-children .djs-shape');
+  await expect(serverChildren.filter({ hasText: 'Datenbank' })).toHaveCount(1);
+});
+
+test('highlights an active palette create action', async ({ page }) => {
+  await page.goto('/');
+
+  const databaseAction = page.locator('.djs-palette [data-action="create.db"]');
+  await databaseAction.click();
+  await expect(databaseAction).toHaveClass(/infra-active-entry/);
+
+  await page.keyboard.press('Escape');
+  await expect(databaseAction).not.toHaveClass(/infra-active-entry/);
+});
+
+test('shrinks a container after removing its child', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('[data-app-action="example"]').click();
+
+  const server = page.locator('[data-element-id="server_app"]');
+  const serverHit = server.locator(':scope > .djs-hit');
+  const initialHeight = Number(await serverHit.getAttribute('height'));
+
+  await serverHit.click({ position: { x: 45, y: 22 }, force: true });
+  await page.locator('.djs-context-pad [data-action="append.db"]').click();
+  await expect.poll(async () => Number(await serverHit.getAttribute('height'))).toBeGreaterThan(initialHeight);
+
+  const database = page.locator('.djs-shape').filter({ hasText: 'Datenbank' });
+  await database.locator('.djs-hit').click({ force: true });
+  await page.locator('.djs-context-pad [data-action="delete"]').click();
+  await expect.poll(async () => Number(await serverHit.getAttribute('height'))).toBe(initialHeight);
+});
+
+test('resizes containers from corner handles', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('[data-app-action="example"]').click();
+
+  const server = page.locator('[data-element-id="server_app"]');
+  const serverHit = server.locator(':scope > .djs-hit');
+  const initialWidth = Number(await serverHit.getAttribute('width'));
+  const initialHeight = Number(await serverHit.getAttribute('height'));
+  await serverHit.click({ position: { x: 45, y: 22 }, force: true });
+
+  await expect(page.locator('.djs-resizer-se')).toBeVisible();
+  await expect(page.locator('.djs-resizer-e')).toBeHidden();
+  const handle = await page.locator('.djs-resizer-se .djs-resizer-hit').boundingBox();
+  expect(handle).toBeTruthy();
+  await page.mouse.move(handle!.x + handle!.width / 2, handle!.y + handle!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(handle!.x + handle!.width / 2 + 50, handle!.y + handle!.height / 2 + 30, { steps: 5 });
+  await page.mouse.up();
+
+  await expect.poll(async () => Number(await serverHit.getAttribute('width'))).toBeGreaterThan(initialWidth);
+  await expect.poll(async () => Number(await serverHit.getAttribute('height'))).toBeGreaterThan(initialHeight);
+});

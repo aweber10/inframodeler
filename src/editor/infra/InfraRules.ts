@@ -4,7 +4,7 @@ import type { Connection, Element, Parent, Shape } from 'diagram-js/lib/model/Ty
 
 import type { InfraShape } from './InfraElementFactory';
 import { canContain, canCreateAtRoot } from './meta/containment';
-import { isInfraType } from './meta/types';
+import { CONTAINER_PADDING, isInfraType } from './meta/types';
 
 interface CreateContext {
   shape: Shape;
@@ -24,6 +24,10 @@ interface ConnectionContext {
 interface CreateElementsContext {
   elements: Element[];
   target: Parent | null;
+}
+
+interface ResizeContext {
+  shape: Shape;
 }
 
 export function canPlace(target: Parent | null, rawShape: Shape): boolean {
@@ -52,6 +56,11 @@ export function canConnect(source: Element, target: Element): false | Partial<Co
   };
 }
 
+export function canResizeContainer(shape: Shape): boolean {
+  const type = shape.businessObject?.type;
+  return isInfraType(type) && type in CONTAINER_PADDING;
+}
+
 export default class InfraRules extends RuleProvider {
   static override $inject = ['eventBus'];
 
@@ -71,5 +80,8 @@ export default class InfraRules extends RuleProvider {
       elements.filter((element): element is Shape => 'width' in element && !('waypoints' in element))
         .every((shape) => shape.parent || canPlace(target, shape))
     );
+    this.addRule('shape.resize', ({ shape }: ResizeContext) => {
+      return canResizeContainer(shape);
+    });
   }
 }

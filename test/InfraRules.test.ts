@@ -1,7 +1,7 @@
 import type { Parent, Shape } from 'diagram-js/lib/model/Types';
 import { describe, expect, it } from 'vitest';
 
-import { canConnect, canPlace } from '../src/editor/infra/InfraRules';
+import { canConnect, canPlace, canResizeContainer } from '../src/editor/infra/InfraRules';
 
 function shape(type: string): Shape {
   return { businessObject: { type } } as Shape;
@@ -42,5 +42,15 @@ describe('InfraRules connections', () => {
     expect(canConnect(module, module)).toBe(false);
     expect(canConnect(shape('zone'), shape('server'))).toBe(false);
     expect(canConnect(shape('note'), shape('note'))).toBe(false);
+  });
+});
+
+describe('InfraRules resize', () => {
+  it('allows resizing containers only', () => {
+    expect(canResizeContainer(shape('zone'))).toBe(true);
+    expect(canResizeContainer(shape('server'))).toBe(true);
+    expect(canResizeContainer(shape('syssoft'))).toBe(true);
+    expect(canResizeContainer(shape('db'))).toBe(false);
+    expect(canResizeContainer(shape('module'))).toBe(false);
   });
 });

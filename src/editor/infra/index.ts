@@ -11,6 +11,7 @@ import InfraLabelBehavior from './InfraLabelBehavior';
 import InfraLayouter from './InfraLayouter';
 import InfraPalette from './InfraPalette';
 import InfraRenderer from './InfraRenderer';
+import InfraResizeBehavior from './InfraResizeBehavior';
 import InfraRules from './InfraRules';
 
 export default {
@@ -23,6 +24,7 @@ export default {
     'infraCommandHandlers',
     'infraCopyPasteBehavior',
     'infraFitBehavior',
+    'infraResizeBehavior',
     'infraDirectEditing',
     'infraContextPad'
   ],
@@ -37,6 +39,7 @@ export default {
   infraCommandHandlers: ['type', InfraCommandHandlers],
   infraCopyPasteBehavior: ['type', InfraCopyPasteBehavior],
   infraFitBehavior: ['type', InfraFitBehavior],
+  infraResizeBehavior: ['type', InfraResizeBehavior],
   infraDirectEditing: ['type', InfraDirectEditing],
   infraContextPad: ['type', InfraContextPad],
   layouter: ['type', InfraLayouter]

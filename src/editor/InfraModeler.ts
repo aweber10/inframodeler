@@ -11,6 +11,7 @@ import LassoToolModule from 'diagram-js/lib/features/lasso-tool';
 import ModelingModule from 'diagram-js/lib/features/modeling';
 import MoveModule from 'diagram-js/lib/features/move';
 import PaletteModule from 'diagram-js/lib/features/palette';
+import ResizeModule from 'diagram-js/lib/features/resize';
 import SnappingModule from 'diagram-js/lib/features/snapping';
 import MoveCanvasModule from 'diagram-js/lib/navigation/movecanvas';
 import ZoomScrollModule from 'diagram-js/lib/navigation/zoomscroll';
@@ -28,6 +29,7 @@ export function createInfraModeler(container: HTMLElement): Diagram {
       ConnectModule,
       ContextPadModule,
       AutoResizeModule,
+      ResizeModule,
       BendpointsModule,
       SnappingModule,
       LassoToolModule,

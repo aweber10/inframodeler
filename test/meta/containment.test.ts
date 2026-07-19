@@ -5,7 +5,7 @@ import { INFRA_TYPES, type InfraType } from '../../src/editor/infra/meta/types';
 
 const expected: Partial<Record<InfraType, readonly InfraType[]>> = {
   zone: ['server', 'db', 'esb', 'firewall', 'extsys', 'umsystem', 'actor', 'note'],
-  server: ['syssoft', 'module'],
+  server: ['syssoft', 'module', 'db'],
   syssoft: ['module']
 };
 

@@ -14,6 +14,7 @@ export const CONTEXT_PAD_ACTIONS: Readonly<Partial<Record<InfraType, readonly Ap
   ],
   server: [
     { type: 'syssoft', placement: 'inside', title: 'Systemsoftware (Runtime) anlegen' },
+    { type: 'db', placement: 'inside', title: 'Datenbank auf Server anlegen' },
     { type: 'server', placement: 'beside', title: 'Server daneben und verbinden', label: '' }
   ],
   syssoft: [{ type: 'module', placement: 'inside', title: 'Software-Modul deployen' }],
