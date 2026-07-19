@@ -17,6 +17,7 @@ export type InfraType = (typeof INFRA_TYPES)[number];
 export interface InfraBusinessObject {
   type: InfraType;
   name: string;
+  extensions?: Record<string, unknown>;
 }
 
 export type InfraConnectionKind = 'communication' | 'noteAttachment';
@@ -24,6 +25,8 @@ export type InfraConnectionKind = 'communication' | 'noteAttachment';
 export interface InfraConnectionBusinessObject {
   kind: InfraConnectionKind;
   label?: string;
+  extensions?: Record<string, unknown>;
+  waypointExtensions?: Array<Record<string, unknown> | undefined>;
 }
 
 export interface InfraTypeDefinition {

@@ -37,4 +37,13 @@ describe('InfraElementFactory', () => {
 
     expect(connection.businessObject).toEqual({ kind: 'communication', label: 'JDBC' });
   });
+
+  it('continues type-specific IDs after imported IDs', () => {
+    const factory = new InfraElementFactory();
+    factory.reserveId('module_41');
+    factory.reserveId('connection_8');
+
+    expect(factory.createInfraShape('module').id).toBe('module_42');
+    expect(factory.createInfraConnection().id).toBe('connection_9');
+  });
 });

@@ -6,47 +6,31 @@ import '@fontsource/jetbrains-mono/latin-600.css';
 import 'diagram-js/assets/diagram-js.css';
 import './styles.css';
 
-import type CommandStack from 'diagram-js/lib/command/CommandStack';
-import type Canvas from 'diagram-js/lib/core/Canvas';
-import type EventBus from 'diagram-js/lib/core/EventBus';
-import type Modeling from 'diagram-js/lib/features/modeling/Modeling';
-
-import { createDemo } from './editor/demo';
+import AppController from './app/AppController';
+import BrowserPlatform from './app/platform/BrowserPlatform';
+import type { PlatformAdapter } from './app/platform/PlatformAdapter';
+import UnsavedChangesDialog from './app/UnsavedChangesDialog';
 import { createInfraModeler } from './editor/InfraModeler';
-import type InfraElementFactory from './editor/infra/InfraElementFactory';
 
-const container = document.querySelector<HTMLElement>('#canvas');
-if (!container) throw new Error('Editor container not found.');
+async function bootstrap(): Promise<void> {
+  const container = document.querySelector<HTMLElement>('#canvas');
+  if (!container) throw new Error('Editor container not found.');
 
-const diagram = createInfraModeler(container);
-const canvas = diagram.get<Canvas>('canvas');
-const commandStack = diagram.get<CommandStack>('commandStack');
-const elementFactory = diagram.get<InfraElementFactory>('elementFactory');
-const eventBus = diagram.get<EventBus>('eventBus');
-const modeling = diagram.get<Modeling>('modeling');
+  const diagram = createInfraModeler(container);
+  const dialog = document.querySelector<HTMLDialogElement>('#unsaved-dialog');
+  if (!dialog) throw new Error('Unsaved changes dialog not found.');
 
-const undoButton = document.querySelector<HTMLButtonElement>('#undo');
-const redoButton = document.querySelector<HTMLButtonElement>('#redo');
-const fitViewportButton = document.querySelector<HTMLButtonElement>('#fit-viewport');
-const resetButton = document.querySelector<HTMLButtonElement>('#reset-demo');
+  const platform: PlatformAdapter = window.__TAURI_INTERNALS__
+    ? new (await import('./app/platform/TauriPlatform')).default()
+    : new BrowserPlatform();
 
-function updateHistoryButtons(): void {
-  if (undoButton) undoButton.disabled = !commandStack.canUndo();
-  if (redoButton) redoButton.disabled = !commandStack.canRedo();
+  const controller = new AppController(
+    diagram,
+    platform,
+    new UnsavedChangesDialog(dialog),
+    document.querySelector('#recent-files')
+  );
+  await controller.start();
 }
 
-function resetDemo(): void {
-  diagram.clear();
-  commandStack.clear();
-  createDemo({ canvas, elementFactory, modeling });
-  commandStack.clear();
-  updateHistoryButtons();
-}
-
-undoButton?.addEventListener('click', () => commandStack.undo());
-redoButton?.addEventListener('click', () => commandStack.redo());
-fitViewportButton?.addEventListener('click', () => canvas.zoom('fit-viewport'));
-resetButton?.addEventListener('click', resetDemo);
-eventBus.on('commandStack.changed', updateHistoryButtons);
-
-resetDemo();
+void bootstrap();

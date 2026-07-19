@@ -14,12 +14,16 @@
           <p>Deployment &amp; Infrastruktur</p>
         </div>
         <div class="app-actions">
-          <button id="undo" type="button">Rückgängig</button>
-          <button id="redo" type="button">Wiederholen</button>
-          <button id="fit-viewport" type="button">Diagramm einpassen</button>
-          <button id="reset-demo" type="button">Demo zurücksetzen</button>
+          <button type="button" data-app-action="new">Neu</button>
+          <button type="button" data-app-action="open">Öffnen</button>
+          <button type="button" data-app-action="save">Speichern</button>
+          <button id="undo" type="button" data-app-action="undo">Rückgängig</button>
+          <button id="redo" type="button" data-app-action="redo">Wiederholen</button>
+          <button id="fit-viewport" type="button" data-app-action="fitViewport">Diagramm einpassen</button>
+          <button id="reset-demo" type="button" data-app-action="example">Beispiel</button>
         </div>
       </header>
+      <nav id="recent-files" class="recent-files" aria-label="Zuletzt geöffnet" hidden></nav>
       <main id="canvas" aria-label="Diagramm-Editor"></main>
       <footer class="app-footer">
         <span><b>Palette</b> Element aufziehen</span>
@@ -29,6 +33,15 @@
         <span><b>Strg/Cmd+Z</b> rückgängig</span>
       </footer>
     </div>
+    <dialog id="unsaved-dialog" class="app-dialog">
+      <h2>Ungespeicherte Änderungen</h2>
+      <p>Sollen die Änderungen vor dem Fortfahren gespeichert werden?</p>
+      <div class="dialog-actions">
+        <button type="button" data-choice="cancel">Abbrechen</button>
+        <button type="button" data-choice="discard">Verwerfen</button>
+        <button type="button" data-choice="save" class="primary">Speichern</button>
+      </div>
+    </dialog>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

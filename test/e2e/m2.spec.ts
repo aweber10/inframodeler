@@ -1,7 +1,41 @@
 import { expect, test } from '@playwright/test';
 
+test('starts with an empty editable document', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.djs-shape')).toHaveCount(0);
+  await expect(page).toHaveTitle('Unbenannt – InfraModeler');
+  const canvasHeight = await page.locator('#canvas').evaluate((element) => element.getBoundingClientRect().height);
+  const legendHeight = await page.locator('.app-footer').evaluate((element) => element.getBoundingClientRect().height);
+  expect(canvasHeight).toBeGreaterThan(legendHeight * 5);
+});
+
+test('saves and reopens a diagram in browser mode', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('[data-app-action="example"]').click();
+
+  const downloadPromise = page.waitForEvent('download');
+  await page.locator('[data-app-action="save"]').click();
+  const download = await downloadPromise;
+  const stream = await download.createReadStream();
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) chunks.push(Buffer.from(chunk));
+  const contents = Buffer.concat(chunks).toString('utf8');
+  expect(download.suggestedFilename()).toBe('beispieldiagramm.imod.json');
+  expect(JSON.parse(contents)).toMatchObject({ format: 'inframodeler', formatVersion: 1, title: 'Beispieldiagramm' });
+
+  await page.locator('[data-app-action="new"]').click();
+  await expect(page.locator('.djs-shape')).toHaveCount(0);
+
+  const chooserPromise = page.waitForEvent('filechooser');
+  await page.locator('[data-app-action="open"]').click();
+  const chooser = await chooserPromise;
+  await chooser.setFiles({ name: 'beispiel.imod.json', mimeType: 'application/json', buffer: Buffer.from(contents) });
+  await expect(page.locator('[data-element-id="module_webshop"]')).toBeVisible();
+});
+
 test('creates and edits a JDBC database through the context pad', async ({ page }) => {
   await page.goto('/');
+  await page.locator('[data-app-action="example"]').click();
 
   const module = page.locator('[data-element-id="module_webshop"]');
   await expect(module).toBeVisible();
@@ -18,9 +52,10 @@ test('creates and edits a JDBC database through the context pad', async ({ page 
   const createdId = await databases.first().getAttribute('data-element-id');
   expect(createdId).toBeTruthy();
   const createdDatabase = page.locator(`[data-element-id="${createdId}"]`);
-  await createdDatabase.dblclick();
+  await createdDatabase.locator('.djs-hit').dispatchEvent('dblclick');
   const editor = page.locator('.djs-direct-editing-content');
   await expect(editor).toBeVisible();
+  await expect(editor).toHaveText('Datenbank');
   await editor.fill('Bestell-DB');
   await editor.press('Enter');
   await expect(createdDatabase).toContainText('Bestell-DB');
@@ -33,6 +68,7 @@ test('creates and edits a JDBC database through the context pad', async ({ page 
 
 test('exposes M2 comfort tools', async ({ page }) => {
   await page.goto('/');
+  await page.locator('[data-app-action="example"]').click();
   await expect(page.locator('.djs-palette [data-action="tool.lasso"]')).toBeVisible();
 
   const module = page.locator('[data-element-id="module_webshop"]');
@@ -47,6 +83,7 @@ test('exposes M2 comfort tools', async ({ page }) => {
 
 test('draws a connection from the context pad to a target', async ({ page }) => {
   await page.goto('/');
+  await page.locator('[data-app-action="example"]').click();
 
   const source = page.locator('[data-element-id="system_crm"]');
   const target = page.locator('[data-element-id="database_customer"]');

@@ -6,7 +6,21 @@ Generic drawing tools treat such diagrams as shapes and lines - consistency is m
 
 ## Building the application
 
-The application (a Tauri desktop app based on diagram-js) is under development. Build instructions will follow here once the first milestone lands in this repository.
+Requirements: Node.js 18.18 or newer, npm, Rust and the platform-specific Tauri prerequisites.
+
+```sh
+npm install
+npm run dev
+npm run tauri dev
+```
+
+Create a macOS application bundle with:
+
+```sh
+npm run tauri build -- --bundles app
+```
+
+Run checks with `npm run lint`, `npm test`, `npm run test:e2e`, `npm run build`, and `cargo check --manifest-path src-tauri/Cargo.toml`.
 
 ## Project documents
 

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#12867d"/>
+      <stop offset="1" stop-color="#0a5f58"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1024" height="1024" rx="200" fill="url(#bg)"/>
+
+  <!-- Verbindung zum Knotenpunkt -->
+  <path d="M620 560 L620 780 L790 780" fill="none" stroke="#ffffff" stroke-width="30"
+        stroke-linecap="round" stroke-linejoin="round" opacity="0.92"/>
+  <circle cx="812" cy="780" r="58" fill="#ffffff"/>
+  <circle cx="812" cy="780" r="26" fill="#0a5f58"/>
+
+  <!-- 3D-Server-Knoten (UML-Node) -->
+  <polygon points="240,330 330,240 760,240 670,330" fill="#d8e6e4" stroke="#ffffff" stroke-width="26" stroke-linejoin="round"/>
+  <polygon points="670,330 760,240 760,530 670,620" fill="#b7cfcc" stroke="#ffffff" stroke-width="26" stroke-linejoin="round"/>
+  <rect x="240" y="330" width="430" height="290" fill="#ffffff" stroke="#ffffff" stroke-width="26" stroke-linejoin="round"/>
+
+  <!-- Modul-Andeutung im Knoten -->
+  <rect x="300" y="400" width="310" height="66" rx="14" fill="#0f766e"/>
+  <rect x="300" y="500" width="200" height="66" rx="14" fill="#0f766e" opacity="0.45"/>
+</svg>
