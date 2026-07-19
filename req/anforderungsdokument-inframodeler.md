@@ -1,6 +1,6 @@
 # Fachliches Anforderungsdokument – InfraModeler
 
-**Version:** 0.1 (Entwurf) · **Datum:** 18.07.2026 · **Status:** zur Abstimmung
+**Version:** 0.2 (Entwurf) · **Datum:** 19.07.2026 · **Status:** fortgeschriebener Arbeitsstand
 
 ---
 
@@ -34,7 +34,7 @@ Die folgenden Themen sind bewusst **kein** Bestandteil des Produkts. Sie hier fe
 | Nr. | Typ | Fachliche Bedeutung | Darstellung (gemäß POC) | Kann enthalten |
 |---|---|---|---|---|
 | E-01 | **Netzwerkzone** | Netzsegment mit einheitlichem Schutzniveau (z. B. Intranet, DMZ) | Gestrichelter, getönter Rahmen; Name in Versalien | Server, DB, ESB, Firewall, Externes System, Umsystem, Aktor, Notiz |
-| E-02 | **Server / Knoten** | Physischer oder virtueller Rechner, benannt per Hostname | 3D-Quader (UML-Node-Stil), Hostname in Monospace | Systemsoftware, Modul |
+| E-02 | **Server / Knoten** | Physischer oder virtueller Rechner, benannt per Hostname | 3D-Quader (UML-Node-Stil), Hostname in Monospace | Systemsoftware, Modul, Datenbank |
 | E-03 | **Systemsoftware** | Laufzeitumgebung, z. B. Tomcat, WebSphere Liberty (WLP) | Rechteck mit Zahnrad-Symbol | Modul |
 | E-04 | **Software-Modul** | Betriebene fachliche Einheit (Anwendung, Service, WAR/EAR) | UML-Komponenten-Symbol, teal | – |
 | E-05 | **Datenbank** | Datenbankinstanz oder -schema | Zylinder, gelb | – |
@@ -75,6 +75,8 @@ Die folgenden Annahmen wurden vom Autor getroffen und sind vom Fachbereich zu be
 
 Rahmenbedingungen aus den getroffenen Entscheidungen: Desktop-Anwendung auf Basis **Tauri** für **Windows, macOS und Linux**; Ablage als **lokale Dateien**, Versionierung über **Git**; Editor-Kern auf Basis **diagram-js**; Datenmodell **ein Diagramm pro Datei**.
 
+Aktueller Validierungsstand: Editor-Kern, Dateiformat und Desktop-Dateilebenszyklus sind auf macOS umgesetzt und manuell erprobt. Die funktionale Gleichheit auf Windows und Linux bleibt Bestandteil der plattformübergreifenden Abnahme gemäß N-02.
+
 ---
 
 ## 4. Funktionale Anforderungen
@@ -94,7 +96,7 @@ Priorisierung nach MoSCoW: **[M]** Muss (V1), **[S]** Soll (V1, verhandelbar), *
 
 - **F-10 [M] Kontextmenü am Element (Context Pad).** Bei Auswahl eines Elements erscheint ein kompaktes Aktionsfeld direkt am Element. Es bietet ausschließlich die dort sinnvollen Aktionen an, gemäß der Pad-Konfiguration des POC (z. B. Zone → "Server anlegen"; Modul → "DB anbinden (JDBC)", "Über ESB anbinden", "Modul anbinden", "Externes System", "Umsystem"; überall: Notiz anheften, Verbinden, Umbenennen, Löschen).
 - **F-11 [M] Anhängen mit automatischer Platzierung.** "Anhängen"-Aktionen erzeugen das neue Element automatisch positioniert (in Containern: gestapelt; daneben: rechts mit Kollisionsausweichen) und – wo definiert – inklusive beschrifteter Verbindung in einem Schritt.
-- **F-12 [M] Mitwachsende Container.** Wird ein Kind in Zone, Server oder Systemsoftware eingefügt oder verschoben, wachsen die Container automatisch (rekursiv nach oben), sodass Inhalte nie überstehen.
+- **F-12 [M] Mitwachsende und skalierbare Container.** Wird ein Kind in Zone, Server oder Systemsoftware eingefügt oder verschoben, wachsen die Container automatisch (rekursiv nach oben), sodass Inhalte nie überstehen. Nach Entfernen oder Umhängen eines Kindes schrumpfen die betroffenen Container bis zur fachlichen Mindestgröße beziehungsweise bis zur weiterhin für ihre Inhalte benötigten Größe. Für Ausnahmefälle lassen sich Container über Eckgriffe manuell vergrößern und verkleinern; Kinder und definierte Innenabstände begrenzen dabei die minimale Größe.
 - **F-13 [M] Andocken per Drag & Drop.** Elemente lassen sich per Ziehen in zulässige Container umhängen (z. B. Modul von einem Tomcat in einen anderen). Unzulässige Ziele werden während des Ziehens visuell abgelehnt.
 - **F-14 [M] Verbinden-Werkzeug.** Verbindungen entstehen über das Context Pad ("Verbinden", dann Ziel anklicken) mit kontextabhängigem Standard-Label (siehe 2.2). Unzulässige Verbindungen werden verhindert.
 - **F-15 [M] Umbenennen inline.** Doppelklick auf Element oder Kantenlabel öffnet die Bearbeitung direkt am Ort; Enter bestätigt, Escape verwirft.

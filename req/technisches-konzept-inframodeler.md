@@ -1,6 +1,6 @@
 # Technisches Konzept – InfraModeler
 
-**Version:** 0.1 (Entwurf) · **Datum:** 18.07.2026 · **Bezug:** Anforderungsdokument v0.1, POC `inframodeler-prototyp.html`
+**Version:** 0.2 (Entwurf) · **Datum:** 19.07.2026 · **Bezug:** Anforderungsdokument v0.2, POC `inframodeler-prototyp.html`
 
 ---
 
@@ -101,40 +101,24 @@ src/editor/infra/
 ├── meta/
 │   ├── types.ts             // Elementtypen, Größen, Defaults  (POC: DEF)
 │   ├── containment.ts       // Enthaltensein-Matrix            (POC: CONTAINS)
+│   ├── contextPad.ts        // typisierte Context-Pad-Aktionen  (POC: PADCFG)
 │   └── edgeDefaults.ts      // Standard-Kantenlabels           (POC: EDGE_DEFAULT)
 ├── InfraElementFactory.ts   // erzeugt Shapes mit businessObject {type, name}
 ├── InfraRenderer.ts         // zeichnet alle Elementtypen      (POC: drawNode)
 ├── InfraRules.ts            // RuleProvider                    (POC: CONTAINS + Checks)
 ├── InfraContextPad.ts       // ContextPadProvider              (POC: PADCFG)
 ├── InfraAutoPlace.ts        // Platzierungsstrategie           (POC: placeInside/freeSpot)
-├── InfraAutoResize.ts       // AutoResizeProvider              (POC: fit)
+├── InfraAutoResize.ts       // automatisches Containerwachstum  (POC: fit)
+├── InfraFitBehavior.ts      // Rück-Fitting nach Löschen/Umhängen
+├── InfraResizeBehavior.ts   // manuelles Skalieren über Eckgriffe
 ├── InfraLayouter.ts         // orthogonales Kantenrouting      (POC: routePoints)
 ├── InfraLabelBehavior.ts    // CommandInterceptor: Default-Labels, Aktor→HTTPS, Notiz-Stil
-├── FirewallBehavior.ts      // F-31: Nachfrage bei Zonenübertritt
+├── InfraDirectEditing.ts    // Inline-Bearbeitung von Namen und Kantenlabels
+├── InfraCopyPasteBehavior.ts// Erhalt der Fachdaten beim Kopieren
 └── InfraPalette.ts          // linke Palette (ersetzt Toolbar-Buttons des POC)
 ```
 
-Die Moduldefinition verdrahtet das per didi:
-
-```ts
-// src/editor/infra/index.ts
-export default {
-  __init__: [
-    'infraRenderer', 'infraRules', 'infraContextPad',
-    'infraAutoResize', 'infraLabelBehavior', 'firewallBehavior', 'infraPalette'
-  ],
-  elementFactory:   ['type', InfraElementFactory],
-  infraRenderer:    ['type', InfraRenderer],
-  infraRules:       ['type', InfraRules],
-  infraContextPad:  ['type', InfraContextPad],
-  autoPlaceHandler: ['type', InfraAutoPlace],
-  infraAutoResize:  ['type', InfraAutoResize],
-  layouter:         ['type', InfraLayouter],
-  infraLabelBehavior: ['type', InfraLabelBehavior],
-  firewallBehavior: ['type', FirewallBehavior],
-  infraPalette:     ['type', InfraPalette]
-};
-```
+Die Moduldefinition in `src/editor/infra/index.ts` verdrahtet diese Services per didi. Generische Funktionen wie CommandStack, Auswahl, Resize, Bendpoints, Snapping, Lasso und Copy/Paste bleiben Module von diagram-js.
 
 ---
 
@@ -309,7 +293,7 @@ export default class InfraLabelBehavior extends CommandInterceptor {
 
 `InfraAutoResize` (erweitert den mitgelieferten `AutoResizeProvider`): erlaubt Auto-Wachstum genau für Zone/Server/Systemsoftware und übernimmt die `PADIN`-Innenabstände aus dem POC als Expansions-Padding – `fit()` als Framework-Bürger, automatisch ausgelöst bei Create, Move und Paste.
 
-`FirewallBehavior` (F-31): `postExecute('connection.create')` prüft, ob Quelle und Ziel in unterschiedlichen Zonen liegen (Elternkette hochlaufen – identisch zur POC-`depth`-Logik); wenn ja, Event an die App-Shell für die unaufdringliche Nachfrage; bei Zustimmung fügt `modeling` ein Firewall-Shape auf der Verbindung ein und teilt sie.
+`FirewallBehavior` (F-31, vorgesehen): `postExecute('connection.create')` soll prüfen, ob Quelle und Ziel in unterschiedlichen Zonen liegen (Elternkette hochlaufen – identisch zur POC-`depth`-Logik); wenn ja, geht ein Event an die App-Shell für die unaufdringliche Nachfrage. Bei Zustimmung fügt `modeling` ein Firewall-Shape auf der Verbindung ein und teilt sie.
 
 ### 3.7 Was bewusst *nicht* portiert wird
 
@@ -333,7 +317,7 @@ Empfohlene Reihenfolge, jede Stufe lauffähig (gut als Studenten-Meilensteine):
 
 ## 4. Dateiformat
 
-Eigenes JSON-Format, Endung **`.imod.json`** (bleibt für generische Werkzeuge als JSON erkennbar). Designziele: menschenlesbar, Git-Diff-freundlich (N-05), migrierbar (N-09).
+Das implementierte JSON-Format trägt die Endung **`.imod.json`** und liegt in Formatversion 1 vor. Es bleibt für generische Werkzeuge als JSON erkennbar. Designziele sind Menschenlesbarkeit, Git-freundliche Diffs (N-05), robuste Validierung (N-06) und eine explizite Migrationskette (N-09).
 
 ```json
 {
@@ -342,37 +326,63 @@ Eigenes JSON-Format, Endung **`.imod.json`** (bleibt für generische Werkzeuge a
   "title": "Webshop – Produktionssicht",
   "elements": [
     { "id": "zone_1", "type": "zone",   "name": "intranet", "x": 80,  "y": 60,  "w": 280, "h": 170 },
-    { "id": "srv_2",  "type": "server", "name": "srv-app-01", "parent": "zone_1", "x": 98, "y": 100, "w": 230, "h": 130 },
-    { "id": "mod_4",  "type": "module", "name": "Webshop",  "parent": "ss_3", "x": 128, "y": 168, "w": 156, "h": 46 }
+    { "id": "server_1", "type": "server", "name": "srv-app-01", "parent": "zone_1", "x": 98, "y": 100, "w": 430, "h": 250 },
+    { "id": "syssoft_1", "type": "syssoft", "name": "Tomcat 10", "parent": "server_1", "x": 114, "y": 136, "w": 200, "h": 95 },
+    { "id": "module_1", "type": "module", "name": "Webshop", "parent": "syssoft_1", "x": 128, "y": 168, "w": 156, "h": 46 },
+    { "id": "db_1", "type": "db", "name": "Kunden-DB", "parent": "server_1", "x": 350, "y": 130, "w": 132, "h": 88 }
   ],
   "connections": [
-    { "id": "e_6", "source": "mod_4", "target": "db_5", "label": "JDBC",
-      "waypoints": [ { "x": 284, "y": 191 }, { "x": 470, "y": 164 } ] }
+    { "id": "connection_1", "source": "module_1", "target": "db_1",
+      "kind": "communication", "label": "JDBC",
+      "waypoints": [ { "x": 284, "y": 191 }, { "x": 350, "y": 174 } ] }
   ]
 }
 ```
 
-Verbindliche Regeln für die Serialisierung:
+### 4.1 Felder
+
+- Das Wurzelobjekt enthält `format`, `formatVersion`, `title`, `elements` und `connections`.
+- Elemente enthalten `id`, `type`, `name`, optional `parent`, sowie die Weltgeometrie `x`, `y`, `w`, `h`.
+- Verbindungen enthalten `id`, `source`, `target`, `kind`, `label` und mindestens zwei `waypoints`.
+- `kind` ist `communication` für gerichtete Kommunikation oder `noteAttachment` für eine gestrichelte Notiz-Anheftung.
+- Containergrößen und manuell gesetzte Kantenwegpunkte werden vollständig persistiert.
+
+### 4.2 Serialisierung
 
 - **Deterministisch:** feste Schlüsselreihenfolge, Elemente sortiert nach ID, LF-Zeilenenden, 2-Spaces-Einrückung, abschließender Zeilenumbruch. Zwei Speichervorgänge ohne Änderung ⇒ byte-identisch.
-- **Stabile IDs:** einmal vergeben, nie neu nummeriert (Präfix nach Typ + fortlaufende Nummer aus persistiertem Zähler oder nanoid). Grundlage kleiner Git-Diffs.
+- **Stabile IDs:** einmal vergeben, nie neu nummeriert. Neue IDs verwenden das Typpräfix und einen fortlaufenden, nach dem Import reservierten Zähler, beispielsweise `module_42` oder `connection_9`.
 - **Ein Element pro Objekt-Block:** Änderungen an einem Element erzeugen einen lokal begrenzten Diff.
-- **Vorwärts-Strategie:** Loader kennt Migrationskette `v1 → v2 → …`; unbekannte höhere Version ⇒ klare Fehlermeldung (F-03). Unbekannte *Zusatzfelder* werden beim Laden bewahrt und wieder herausgeschrieben (Toleranzprinzip, erleichtert spätere Erweiterungen und Hand-Edits).
-- Der Import baut das Diagramm über `modeling`/`canvas` auf; der Export liest aus der `ElementRegistry`. Beides liegt in `src/app/serialization/` und ist headless per Vitest testbar (Roundtrip-Property: laden → speichern ⇒ identisch).
+- **Toleranzprinzip:** Unbekannte Zusatzfelder auf Wurzel-, Element-, Verbindungs- und Wegpunktebene werden beim Laden bewahrt und deterministisch wieder herausgeschrieben.
+
+### 4.3 Laden, Validierung und Migration
+
+- Der Parser meldet syntaktische JSON-Fehler mit Zeile und Spalte.
+- Formatkennung, Formatversion, Feldtypen, positive Größen, eindeutige IDs und Referenzen werden vor dem Import geprüft.
+- Parent-Beziehungen müssen der Enthaltensein-Matrix entsprechen und dürfen keine Zyklen bilden.
+- Verbindungsart und Endpunkte müssen semantisch zusammenpassen; Notiz-Anheftungen besitzen genau einen Notiz-Endpunkt.
+- Dateien mit höherer Formatversion werden mit einer verständlichen Versionsmeldung abgelehnt. Für ältere Versionen durchläuft der Loader die Migrationskette in `migrate.ts`.
+- Erst eine vollständig geparste und validierte Datei ersetzt den aktuellen Editorinhalt. Fehler lassen das geöffnete Diagramm unverändert.
+- Der Import baut Eltern vor Kindern und anschließend die Verbindungen über `modeling`/`canvas` auf. Der Export liest aus der `ElementRegistry`. Die Implementierung liegt unter `src/app/serialization/` und wird mit Vitest auf Roundtrip, Determinismus, Zusatzfelder und Fehlerfälle geprüft.
 
 ---
 
 ## 5. Tauri-Integration
 
-**Tauri 2** mit den offiziellen Plugins `dialog` (Datei-Dialoge), `fs` (Lesen/Schreiben), `window-state`, `single-instance`; optional später `updater`.
+Die Desktop-Shell verwendet **Tauri 2** mit dem finalen App-Identifier **`io.github.aweber10.inframodeler`**. Registriert sind die offiziellen Plugins `dialog`, `fs`, `persisted-scope`, `window-state` und auf Desktop-Plattformen `single-instance`.
 
-- **Datei-Lebenszyklus:** Die App-Shell hält den Dokumentzustand (Pfad, dirty). Dirty-Erkennung elegant über den CommandStack: Marke bei jedem Speichern setzen, `commandStack.canUndo()`-Stand vergleichen; Fenstertitel `● name.imod.json – InfraModeler`. Schließen-Abfrage (F-04) über den Tauri-`onCloseRequested`-Hook.
+- **App-Schichten:** `AppController` koordiniert Editor- und Dateiaktionen. `DocumentSession` hält Pfad, Titel, gespeicherten Snapshot und aktuellen Snapshot. `PlatformAdapter` trennt Browser- und Tauri-Zugriffe, sodass der Editor weiterhin unabhängig im Browser läuft.
+- **Datei-Lebenszyklus:** Dirty wird durch den Vergleich der aktuellen kanonischen Serialisierung mit dem zuletzt gespeicherten Snapshot bestimmt. Dadurch wird auch ein Undo exakt zurück zum Speicherstand korrekt als sauber erkannt. Der Fenstertitel lautet `● name.imod.json – InfraModeler`; die Schließen-Abfrage bietet Speichern, Verwerfen und Abbrechen.
 - **Dateityp-Assoziation** (F-03) über die Bundler-Konfiguration (`fileAssociations` für `.imod.json`); geöffnete Datei kommt als Startargument bzw. per single-instance-Event bei bereits laufender App.
-- **Natives Menü** (Datei/Bearbeiten/Ansicht/Hilfe) in Rust definiert, Events an die Shell; Bearbeiten-Einträge delegieren an `editorActions` (undo, redo, selectAll …) – so bleiben Menü und Tastatur konsistent.
-- **Recovery** (F-05): alle 60 s bei dirty ein Autosave in das Tauri-`appDataDir`; beim Start Rest-Datei erkennen und anbieten.
-- **Sicherheit:** strikte CSP, kein Remote-Content, `fs`-Scope auf vom Nutzer gewählte Pfade + appData begrenzt. Kein eigener Rust-Code jenseits von `main.rs`-Setup und Menü – bewusst (A-04).
+- **Natives Menü:** Ablage, Bearbeiten, Darstellung und Hilfe werden in Rust definiert. Menüereignisse gehen als `app-action` an denselben TypeScript-Controller wie Toolbar und Editor-Actions.
+- **Zuletzt geöffnet:** Bis zu zehn Pfade werden lokal gespeichert. Nicht mehr lesbare Einträge werden beim fehlgeschlagenen Öffnen entfernt.
+- **Single Instance:** Weitere Startversuche fokussieren das vorhandene Fenster und übergeben eine `.imod.json`-Datei als `open-path`-Ereignis.
+- **Recovery** (F-05, noch nicht umgesetzt): vorgesehen ist alle 60 s bei Dirty-Zustand ein Autosave in das Tauri-`appDataDir`; beim Start wird eine verbliebene Recovery-Datei erkannt und angeboten.
+- **Sicherheit:** Eine strikte CSP erlaubt keinen Remote-Content. Dateizugriff wird auf per Dialog gewählte, per Finder geöffnete oder bereits autorisierte Diagrammpfade begrenzt. `persisted-scope` bewahrt diese Freigaben für die Liste zuletzt geöffneter Dateien.
+- **Icons:** `design/icon-source.svg` ist die bearbeitbare Quelle, `design/icon-1024.png` das Ausgangsbild für `npm run tauri icon design/icon-1024.png`. Alle Dateien unter `src-tauri/icons/` sind daraus generiert.
 
 **WebView-Realität:** Windows rendert mit WebView2 (Chromium), macOS mit WKWebView, Linux mit WebKitGTK. Konsequenzen: nur breit unterstützte Web-APIs; SVG-Feinheiten (Text-Metriken, `dominant-baseline`) auf allen drei Engines gegentesten; CI-Builds und Smoke-Tests pro Plattform (Kap. 7). Schriftart im Bundle mitliefern (ein freies Mono + ein freies Sans), nicht auf Systemfonts verlassen – wichtig für identische Diagramm-Optik und für den Export.
+
+**Validierungsstand:** Entwicklung, Build, Dateilebenszyklus, native Menüs und manuelle Bedienung sind auf macOS geprüft. Die plattformübergreifenden Shell-Smoke-Tests für Windows und Linux erfolgen getrennt, sobald diese Plattformen verfügbar sind.
 
 ---
 
@@ -411,7 +421,8 @@ Verbindliche Regeln für die Serialisierung:
 |---|---|---|
 | **M1 – Editor-Fundament** | Fahrplan-Schritte 1–3 (Gerüst, Renderer, Rules) | Alle Elementtypen darstellbar, Verschachtelung per Drag, im Browser lauffähig |
 | **M2 – Camunda-Gefühl** | Schritte 4–6 (Context Pad, AutoPlace, AutoResize, Layouter, direct-editing, Komfort-Features) | POC-Paritätstest bestanden: Leitszenario im Browser |
-| **M3 – Desktop-App** | Serialisierung, Tauri-Shell, Menüs, Dirty-Handling, Assoziation | Speichern/Laden auf allen drei Plattformen |
+| **M3a – Desktop-App macOS** | Serialisierung, Tauri-Shell, Menüs, Dirty-Handling, Assoziation | Speichern/Laden und nativer Dateilebenszyklus auf macOS |
+| **M3b – Plattformvalidierung** | Builds, Dateityp-Assoziation, Single Instance und Shell-Smoke-Tests | Gleiches Verhalten auf Windows, macOS und Linux |
 | **M4 – Auslieferung V1** | SVG/PNG-Export, Leere-Fläche-Hilfe, Recovery, CI-Bundles, Handbuch-Basics | Installierbare V1 gemäß Anforderungsdokument Kap. 6 |
 
 M1 und M2 sind bewusst Tauri-frei – das hält die Feedback-Schleife kurz und macht die Studenten-Challenge im Browser demonstrierbar, lange bevor die Desktop-Integration steht.
