@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { repositionMiddleware } from '../../src/app/import/plantuml/mapper';
+import { repositionMiddleware, resolveNoteOverlaps } from '../../src/app/import/plantuml/mapper';
 import type { DiagramElementRecord } from '../../src/app/serialization/format';
 
 type Adjacency = Map<string, Map<string, number>>;
@@ -100,5 +100,72 @@ describe('repositionMiddleware', () => {
 
     const overlaps = esb.x < sibling.x + sibling.w && esb.x + esb.w > sibling.x && esb.y < sibling.y + sibling.h && esb.y + esb.h > sibling.y;
     expect(overlaps).toBe(false);
+  });
+
+  it('does not place a middleware on top of an unrelated component in another container', () => {
+    // esb lives in zone_1, its centroid target lands on a component parented to zone_2.
+    const zone1 = element('zone_1', 'zone', 0, 0, 2000, 2000);
+    const zone2 = element('zone_2', 'zone', 0, 0, 2000, 2000);
+    const a = element('module_1', 'module', 200, 200, 100, 40);
+    const b = element('module_2', 'module', 600, 200, 100, 40);
+    const foreign = element('db_1', 'db', 380, 180, 100, 80, 'zone_2');
+    const esb = element('esb_1', 'esb', 50, 50, 100, 40, 'zone_1');
+    const records = [zone1, zone2, a, b, foreign, esb];
+
+    repositionMiddleware(records, adjacencyOf([['esb_1', 'module_1', 1], ['esb_1', 'module_2', 1]]));
+
+    const hit = esb.x < foreign.x + foreign.w && esb.x + esb.w > foreign.x && esb.y < foreign.y + foreign.h && esb.y + esb.h > foreign.y;
+    expect(hit).toBe(false);
+  });
+
+  it('separates two middleware elements that would land on the same spot', () => {
+    const a = element('module_1', 'module', 0, 0, 100, 40);
+    const b = element('module_2', 'module', 1000, 0, 100, 40);
+    const esb1 = element('esb_1', 'esb', 5000, 5000, 100, 40);
+    const esb2 = element('esb_2', 'esb', 6000, 6000, 100, 40);
+    const records = [a, b, esb1, esb2];
+
+    repositionMiddleware(records, adjacencyOf([
+      ['esb_1', 'module_1', 1], ['esb_1', 'module_2', 1],
+      ['esb_2', 'module_1', 1], ['esb_2', 'module_2', 1]
+    ]));
+
+    const overlap = esb1.x < esb2.x + esb2.w && esb1.x + esb1.w > esb2.x && esb1.y < esb2.y + esb2.h && esb1.y + esb1.h > esb2.y;
+    expect(overlap).toBe(false);
+  });
+});
+
+describe('resolveNoteOverlaps', () => {
+  it('moves a note off an unrelated component it was placed on top of', () => {
+    const component = element('module_1', 'module', 100, 100, 156, 46);
+    const note = element('note_1', 'note', 120, 110, 190, 56);
+    const records = [component, note];
+
+    resolveNoteOverlaps(records);
+
+    const hit = note.x < component.x + component.w && note.x + note.w > component.x && note.y < component.y + component.h && note.y + note.h > component.y;
+    expect(hit).toBe(false);
+  });
+
+  it('separates two notes stacked on the same position', () => {
+    const target = element('module_1', 'module', 0, 0, 156, 46);
+    const note1 = element('note_1', 'note', 200, 0, 190, 56);
+    const note2 = element('note_2', 'note', 210, 10, 190, 56);
+    const records = [target, note1, note2];
+
+    resolveNoteOverlaps(records);
+
+    const overlap = note1.x < note2.x + note2.w && note1.x + note1.w > note2.x && note1.y < note2.y + note2.h && note1.y + note1.h > note2.y;
+    expect(overlap).toBe(false);
+  });
+
+  it('does not treat a note as overlapping its own parent zone', () => {
+    const zone = element('zone_1', 'zone', 0, 0, 1000, 1000);
+    const note = element('note_1', 'note', 50, 50, 190, 56, 'zone_1');
+    const records = [zone, note];
+
+    resolveNoteOverlaps(records);
+
+    expect(note).toMatchObject({ x: 50, y: 50 });
   });
 });

@@ -81,6 +81,10 @@ export function mapPlantUml(document: PlantUmlDocument): PlantUmlImportResult {
     }
   }
 
+  // Notes are placed relative to their target after the main layout, so de-collide them last -
+  // against every other element as well as against each other.
+  resolveNoteOverlaps(records);
+
   const statistics: Partial<Record<InfraType, number>> = {};
   for (const element of records) statistics[element.type] = (statistics[element.type] ?? 0) + 1;
   return {
@@ -396,7 +400,7 @@ export function repositionMiddleware(records: DiagramElementRecord[], adjacency:
     const dy = targetCenter.y - esb.h / 2 - esb.y;
     translateSubtree(esb, dx, dy, records);
     clampToParent(esb, byId);
-    resolveSiblingOverlap(esb, records);
+    resolveOverlap(esb, records, byId);
   }
 }
 
@@ -413,15 +417,53 @@ function clampToParent(esb: DiagramElementRecord, byId: Map<string, DiagramEleme
   esb.y = Math.min(Math.max(esb.y, minY), Math.max(minY, maxY));
 }
 
-function resolveSiblingOverlap(esb: DiagramElementRecord, records: DiagramElementRecord[]): void {
-  const siblings = records.filter((record) => record !== esb && record.parent === esb.parent && record.type !== 'zone');
-  for (let attempt = 0; attempt < siblings.length; attempt += 1) {
-    const blocker = siblings.find((sibling) => overlaps(esb, sibling));
+function relatedIds(record: DiagramElementRecord, records: DiagramElementRecord[], byId: Map<string, DiagramElementRecord>): Set<string> {
+  const related = new Set<string>([record.id]);
+  // Ancestors: a moved element must not treat its own containers as obstacles.
+  let ancestor = record.parent ? byId.get(record.parent) : undefined;
+  while (ancestor) {
+    related.add(ancestor.id);
+    ancestor = ancestor.parent ? byId.get(ancestor.parent) : undefined;
+  }
+  // Descendants: same reasoning for nested children.
+  const collectChildren = (id: string) => {
+    for (const child of records.filter(({ parent }) => parent === id)) {
+      related.add(child.id);
+      collectChildren(child.id);
+    }
+  };
+  collectChildren(record.id);
+  return related;
+}
+
+/**
+ * Nudges `record` out of any overlap with other elements. Considers every element except the
+ * record's own containers (ancestors) and nested children, and zones (which are meant to contain
+ * things). Overlaps are resolved along the axis of smaller penetration, one blocker at a time.
+ * Best effort: gives up after a bounded number of attempts to stay deterministic and terminating.
+ */
+function resolveOverlap(record: DiagramElementRecord, records: DiagramElementRecord[], byId: Map<string, DiagramElementRecord>): void {
+  const related = relatedIds(record, records, byId);
+  const obstacles = records.filter((other) => !related.has(other.id) && other.type !== 'zone');
+  for (let attempt = 0; attempt < obstacles.length + 1; attempt += 1) {
+    const blocker = obstacles.find((other) => overlaps(record, other));
     if (!blocker) return;
-    const pushX = esb.x + esb.w / 2 < blocker.x + blocker.w / 2 ? blocker.x - esb.w - esb.x : blocker.x + blocker.w - esb.x;
-    const pushY = esb.y + esb.h / 2 < blocker.y + blocker.h / 2 ? blocker.y - esb.h - esb.y : blocker.y + blocker.h - esb.y;
-    if (Math.abs(pushX) <= Math.abs(pushY)) esb.x += pushX;
-    else esb.y += pushY;
+    const pushX = record.x + record.w / 2 < blocker.x + blocker.w / 2 ? blocker.x - record.w - record.x : blocker.x + blocker.w - record.x;
+    const pushY = record.y + record.h / 2 < blocker.y + blocker.h / 2 ? blocker.y - record.h - record.y : blocker.y + blocker.h - record.y;
+    if (Math.abs(pushX) <= Math.abs(pushY)) translateSubtree(record, pushX, 0, records);
+    else translateSubtree(record, 0, pushY, records);
+  }
+}
+
+/**
+ * De-collides every note against all other elements (and one another). Notes are laid out relative
+ * to their target after the main grid pass, so without this two notes attached near the same area -
+ * or a note sitting on top of an unrelated component - would overlap.
+ */
+export function resolveNoteOverlaps(records: DiagramElementRecord[]): void {
+  const byId = new Map(records.map((record) => [record.id, record]));
+  for (const note of records.filter(({ type }) => type === 'note')) {
+    resolveOverlap(note, records, byId);
   }
 }
 
