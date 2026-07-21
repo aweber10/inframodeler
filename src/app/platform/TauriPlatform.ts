@@ -91,7 +91,9 @@ export default class TauriPlatform implements PlatformAdapter {
 }
 
 function fileFilter() {
-  return { name: 'InfraModeler-Diagramm', extensions: ['imod.json'] };
+  // Native open/save dialogs match extensions after the last dot, so "imod.json" (two segments)
+  // never matches actual *.imod.json files - use the plain "json" extension instead.
+  return { name: 'InfraModeler-Diagramm', extensions: ['json'] };
 }
 
 function plantUmlFilter() {
