@@ -1,7 +1,7 @@
 import { TYPE_DEFINITIONS, type InfraType } from '../../../editor/infra/meta/types';
 import { CURRENT_FORMAT_VERSION, FORMAT_NAME, type DiagramConnectionRecord, type DiagramElementRecord, type DiagramFile } from '../../serialization/format';
 import type { PlantUmlDeclaration, PlantUmlDocument, PlantUmlRelation, PlantUmlWarning } from './ast';
-import { CHILD_STACK_GAP, LAYOUT_ORIGIN, MIDDLEWARE_SINGLE_NEIGHBOR_GAP, ROOT_GRID, ZONE_CHILD_GRID, ZONE_GRID, containerPadding } from './layout-constants';
+import { CHILD_STACK_GAP, LAYOUT_ORIGIN, MIDDLEWARE_CLEARANCE, MIDDLEWARE_SINGLE_NEIGHBOR_GAP, ROOT_GRID, ZONE_CHILD_GRID, ZONE_GRID, containerPadding } from './layout-constants';
 
 interface MappedElement {
   sourceUid: string;
@@ -432,32 +432,34 @@ function relatedIds(record: DiagramElementRecord, records: DiagramElementRecord[
   return related;
 }
 
-/** Signed penetration depth of the overlap between two rectangles (0 if they do not overlap). */
-function overlapArea(a: DiagramElementRecord, b: DiagramElementRecord): number {
-  const dx = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
-  const dy = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+/** Signed penetration depth of the overlap between two rectangles (0 if they do not overlap). The
+ * obstacle is inflated by `margin` on every side to keep a minimum clearance around the record. */
+function overlapArea(a: DiagramElementRecord, b: DiagramElementRecord, margin = 0): number {
+  const dx = Math.min(a.x + a.w, b.x + b.w + margin) - Math.max(a.x, b.x - margin);
+  const dy = Math.min(a.y + a.h, b.y + b.h + margin) - Math.max(a.y, b.y - margin);
   return dx > 0 && dy > 0 ? dx * dy : 0;
 }
 
 /**
- * Nudges `record` out of any overlap with other elements. Considers every element except the
- * record's own containers (ancestors) and nested children; foreign zones ARE obstacles, so a
- * middleware bridging two zones is pushed off of them. Each step resolves the strongest overlap
- * (largest intersection area). For that blocker it tries all four escape directions and keeps the
- * shortest move that does not immediately land the record inside another obstacle, so it can escape
- * vertically when there is no horizontal room between containers (and vice versa).
+ * Nudges `record` out of any overlap with other elements, keeping a minimum clearance (obstacles
+ * are treated as inflated by MIDDLEWARE_CLEARANCE). Considers every element except the record's own
+ * containers (ancestors) and nested children; foreign zones ARE obstacles, so a middleware bridging
+ * two zones is pushed clear of their borders. Each step resolves the strongest overlap (largest
+ * inflated intersection area) and tries all four escape directions, keeping the move that minimises
+ * remaining overlap, so it can escape vertically when there is no horizontal room (and vice versa).
  */
 function resolveOverlap(record: DiagramElementRecord, records: DiagramElementRecord[], byId: Map<string, DiagramElementRecord>): void {
   const related = relatedIds(record, records, byId);
   const obstacles = records.filter((other) => !related.has(other.id));
-  const totalOverlap = () => obstacles.reduce((sum, other) => sum + overlapArea(record, other), 0);
+  const margin = MIDDLEWARE_CLEARANCE;
+  const totalOverlap = () => obstacles.reduce((sum, other) => sum + overlapArea(record, other, margin), 0);
 
   const maxAttempts = obstacles.length * 4 + 4;
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     let blocker: DiagramElementRecord | undefined;
     let worst = 0;
     for (const other of obstacles) {
-      const area = overlapArea(record, other);
+      const area = overlapArea(record, other, margin);
       if (area > worst) {
         worst = area;
         blocker = other;
@@ -465,12 +467,12 @@ function resolveOverlap(record: DiagramElementRecord, records: DiagramElementRec
     }
     if (!blocker) return;
 
-    // Candidate moves: push left, right, up or down clear of the current blocker.
+    // Candidate moves: push the record clear of the blocker (plus clearance) on each side.
     const candidates = [
-      { dx: blocker.x - record.w - record.x, dy: 0 },
-      { dx: blocker.x + blocker.w - record.x, dy: 0 },
-      { dx: 0, dy: blocker.y - record.h - record.y },
-      { dx: 0, dy: blocker.y + blocker.h - record.y }
+      { dx: blocker.x - margin - record.w - record.x, dy: 0 },
+      { dx: blocker.x + blocker.w + margin - record.x, dy: 0 },
+      { dx: 0, dy: blocker.y - margin - record.h - record.y },
+      { dx: 0, dy: blocker.y + blocker.h + margin - record.y }
     ];
 
     let best: { dx: number; dy: number; residual: number; distance: number } | undefined;

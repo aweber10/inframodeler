@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { repositionMiddleware, resolveNoteOverlaps } from '../../src/app/import/plantuml/mapper';
+import { MIDDLEWARE_CLEARANCE } from '../../src/app/import/plantuml/layout-constants';
 import type { DiagramElementRecord } from '../../src/app/serialization/format';
 
 type Adjacency = Map<string, Map<string, number>>;
@@ -149,6 +150,24 @@ describe('repositionMiddleware', () => {
     for (const zone of [zone1, zone2]) {
       const hit = esb.x < zone.x + zone.w && esb.x + esb.w > zone.x && esb.y < zone.y + zone.h && esb.y + esb.h > zone.y;
       expect(hit, `esb must not overlap ${zone.id}`).toBe(false);
+    }
+  });
+
+  it('keeps a clearance margin between the middleware and a foreign zone border', () => {
+    const zone1 = element('zone_1', 'zone', 0, 0, 400, 400);
+    const zone2 = element('zone_2', 'zone', 500, 0, 600, 400);
+    const inZone1 = element('module_1', 'module', 40, 180, 100, 40, 'zone_1');
+    const inZone2 = element('module_2', 'module', 700, 180, 100, 40, 'zone_2');
+    const esb = element('esb_1', 'esb', 3000, 3000, 200, 56);
+    const records = [zone1, zone2, inZone1, inZone2, esb];
+
+    repositionMiddleware(records, adjacencyOf([['esb_1', 'module_1', 1], ['esb_1', 'module_2', 1]]));
+
+    // Distance to every foreign zone border must be at least the configured clearance.
+    for (const zone of [zone1, zone2]) {
+      const separatedX = esb.x >= zone.x + zone.w + MIDDLEWARE_CLEARANCE || esb.x + esb.w <= zone.x - MIDDLEWARE_CLEARANCE;
+      const separatedY = esb.y >= zone.y + zone.h + MIDDLEWARE_CLEARANCE || esb.y + esb.h <= zone.y - MIDDLEWARE_CLEARANCE;
+      expect(separatedX || separatedY, `clearance to ${zone.id}`).toBe(true);
     }
   });
 

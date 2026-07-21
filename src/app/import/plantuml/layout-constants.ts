@@ -14,19 +14,22 @@ const DEFAULT_CONTAINER_PADDING: ContainerPadding = { top: 38, side: 16, bottom:
 export const CHILD_STACK_GAP = 12;
 
 /** Grid layout used to arrange zones on the canvas. */
-export const ZONE_GRID = { columns: 2, gapX: 60, gapY: 60 };
+export const ZONE_GRID = { columns: 2, gapX: 120, gapY: 120 };
 
 /** Grid layout used to arrange the direct children of a zone. */
-export const ZONE_CHILD_GRID = { columns: 2, gapX: 30, gapY: 30 };
+export const ZONE_CHILD_GRID = { columns: 2, gapX: 48, gapY: 48 };
 
 /** Grid layout used to arrange root elements that are not part of any zone (excluding actors). */
-export const ROOT_GRID = { columns: 4, gapX: 30, gapY: 30 };
+export const ROOT_GRID = { columns: 4, gapX: 48, gapY: 48 };
 
 /** Fixed offsets for the very first zone / root row. */
 export const LAYOUT_ORIGIN = { zoneX: 80, zoneY: 60, actorX: 0, actorY: 120, actorGapY: 28, rootX: 350, rootY: 80 };
 
 /** Offset used when a middleware element with a single neighbour is nudged next to that neighbour. */
-export const MIDDLEWARE_SINGLE_NEIGHBOR_GAP = 40;
+export const MIDDLEWARE_SINGLE_NEIGHBOR_GAP = 60;
+
+/** Minimum clearance kept between a repositioned middleware/note and any obstacle (incl. zone borders). */
+export const MIDDLEWARE_CLEARANCE = 40;
 
 export function containerPadding(type: string): ContainerPadding {
   return (CONTAINER_PADDING as Record<string, ContainerPadding | undefined>)[type] ?? DEFAULT_CONTAINER_PADDING;
