@@ -1,6 +1,7 @@
 import { TYPE_DEFINITIONS, type InfraType } from '../../../editor/infra/meta/types';
 import { CURRENT_FORMAT_VERSION, FORMAT_NAME, type DiagramConnectionRecord, type DiagramElementRecord, type DiagramFile } from '../../serialization/format';
 import type { PlantUmlDeclaration, PlantUmlDocument, PlantUmlRelation, PlantUmlWarning } from './ast';
+import { CHILD_STACK_GAP, LAYOUT_ORIGIN, ROOT_GRID, ZONE_CHILD_GRID, ZONE_GRID, containerPadding } from './layout-constants';
 
 interface MappedElement {
   sourceUid: string;
@@ -9,6 +10,9 @@ interface MappedElement {
   parentSourceUid?: string;
   source: PlantUmlDeclaration;
 }
+
+/** Connection weight between two element ids, used to keep frequently communicating elements close together. */
+type AdjacencyMap = Map<string, Map<string, number>>;
 
 export interface PlantUmlImportResult {
   file: DiagramFile;
@@ -38,24 +42,29 @@ export function mapPlantUml(document: PlantUmlDocument): PlantUmlImportResult {
     item.parentSourceUid = resolveMappedParent(item.source, item.type, mapped, byUid, warnings);
   }
 
-  const layout = layoutElements(mapped);
-  const outputBySource = new Map(mapped.map((item, index) => [item.sourceUid, layout.elements[index]!]));
+  const records = createRecords(mapped);
+  const outputBySource = new Map(mapped.map((item, index) => [item.sourceUid, records[index]!]));
   const resolver = createResolver(document.declarations, sourceTargets, outputBySource);
+  const adjacency = buildAdjacency(document.relations, resolver);
+
+  layoutElements(records, adjacency);
+
   const connections = mapRelations(document.relations, resolver, warnings);
 
+  let noteCounter = 1;
   for (const note of document.notes) {
     const target = resolver(note.target, note.scopeUid);
     if (!target) {
       warnings.push({ code: 'unresolved-note', message: `Notizziel "${note.target}" konnte nicht aufgelöst werden.`, line: note.location.line });
       continue;
     }
-    const targetRecord = layout.elements.find(({ id }) => id === target);
-    const zoneParent = findZoneParent(targetRecord, layout.elements);
-    const noteRecord = createRecord('note', note.text, `note_${layout.noteCounter++}`, zoneParent?.id, 0, 0);
+    const targetRecord = records.find(({ id }) => id === target);
+    const zoneParent = findZoneParent(targetRecord, records);
+    const noteRecord = createRecord('note', note.text, `note_${noteCounter++}`, zoneParent?.id, 0, 0);
     const position = notePosition(targetRecord!, noteRecord, note.position);
     noteRecord.x = position.x;
     noteRecord.y = position.y;
-    layout.elements.push(noteRecord);
+    records.push(noteRecord);
     connections.push(connectionRecord(`connection_${connections.length + 1}`, noteRecord.id, target, 'noteAttachment', ''));
   }
 
@@ -63,23 +72,23 @@ export function mapPlantUml(document: PlantUmlDocument): PlantUmlImportResult {
     for (const declaration of document.declarations.filter(({ color }) => color)) {
       const target = resolver(declaration.alias, declaration.parentUid);
       if (!target) continue;
-      const targetRecord = layout.elements.find(({ id }) => id === target)!;
-      const zoneParent = findZoneParent(targetRecord, layout.elements);
-      const noteRecord = createRecord('note', document.legend, `note_${layout.noteCounter++}`, zoneParent?.id, targetRecord.x + targetRecord.w + 35, targetRecord.y);
-      layout.elements.push(noteRecord);
+      const targetRecord = records.find(({ id }) => id === target)!;
+      const zoneParent = findZoneParent(targetRecord, records);
+      const noteRecord = createRecord('note', document.legend, `note_${noteCounter++}`, zoneParent?.id, targetRecord.x + targetRecord.w + 35, targetRecord.y);
+      records.push(noteRecord);
       connections.push(connectionRecord(`connection_${connections.length + 1}`, noteRecord.id, target, 'noteAttachment', ''));
       warnings.push({ code: 'color-legend', message: `Farbcodierung von "${declaration.name}" wurde als Notiz übernommen.`, line: declaration.location.line });
     }
   }
 
   const statistics: Partial<Record<InfraType, number>> = {};
-  for (const element of layout.elements) statistics[element.type] = (statistics[element.type] ?? 0) + 1;
+  for (const element of records) statistics[element.type] = (statistics[element.type] ?? 0) + 1;
   return {
     file: {
       format: FORMAT_NAME,
       formatVersion: CURRENT_FORMAT_VERSION,
       title: document.title || 'PlantUML-Import',
-      elements: layout.elements,
+      elements: records,
       connections
     },
     warnings,
@@ -164,7 +173,8 @@ function canParent(parent: InfraType, child: InfraType): boolean {
     (parent === 'syssoft' && child === 'module');
 }
 
-function layoutElements(mappedItems: MappedElement[]) {
+/** Assigns stable, human-readable ids and creates the initial (unpositioned) records. */
+function createRecords(mappedItems: MappedElement[]): DiagramElementRecord[] {
   const counters = new Map<InfraType, number>();
   const ids = new Map<string, string>();
   for (const item of mappedItems) {
@@ -172,60 +182,163 @@ function layoutElements(mappedItems: MappedElement[]) {
     counters.set(item.type, next);
     ids.set(item.sourceUid, `${item.type}_${next}`);
   }
-  const records = mappedItems.map((item) => createRecord(item.type, item.name, ids.get(item.sourceUid)!, item.parentSourceUid ? ids.get(item.parentSourceUid) : undefined, 0, 0));
-  const byId = new Map(records.map((record) => [record.id, record]));
+  return mappedItems.map((item) =>
+    createRecord(item.type, item.name, ids.get(item.sourceUid)!, item.parentSourceUid ? ids.get(item.parentSourceUid) : undefined, 0, 0)
+  );
+}
 
-  // Leaf content first.
-  for (const parent of records.filter(({ type }) => type === 'syssoft')) arrangeChildren(parent, records, 14, 32, 12);
-  for (const parent of records.filter(({ type }) => type === 'server')) arrangeChildren(parent, records, 16, 38, 14);
+/** Builds an undirected connection-weight map keyed by resolved element id, used to keep related elements close together. */
+export function buildAdjacency(
+  relations: PlantUmlRelation[],
+  resolve: (reference: string, scopeUid?: string) => string | undefined
+): AdjacencyMap {
+  const adjacency: AdjacencyMap = new Map();
+  const bump = (a: string, b: string) => {
+    const inner = adjacency.get(a) ?? new Map<string, number>();
+    inner.set(b, (inner.get(b) ?? 0) + 1);
+    adjacency.set(a, inner);
+  };
+  for (const relation of relations) {
+    if (relation.hidden) continue;
+    const source = resolve(relation.source, relation.scopeUid);
+    const target = resolve(relation.target, relation.scopeUid);
+    if (!source || !target || source === target) continue;
+    bump(source, target);
+    bump(target, source);
+  }
+  return adjacency;
+}
 
-  const zones = records.filter(({ type }) => type === 'zone');
-  zones.forEach((zone, zoneIndex) => {
-    const x = 80 + (zoneIndex % 2) * 700;
-    const y = 60 + Math.floor(zoneIndex / 2) * 520;
-    zone.x = x;
-    zone.y = y;
-    const children = records.filter(({ parent }) => parent === zone.id);
-    children.forEach((child, index) => {
-      child.x = x + 28 + (index % 2) * 310;
-      child.y = y + 55 + Math.floor(index / 2) * 190;
-      moveDescendants(child, records, child.x, child.y);
+/**
+ * Orders a set of sibling elements so that strongly connected elements end up next to each other
+ * once placed into a grid/stack. Simple greedy nearest-neighbour heuristic: start with the element
+ * that has the strongest connectivity within the set, then repeatedly append the still-unplaced
+ * element most strongly connected to the last placed one. Falls back to the original (declaration)
+ * order whenever no connection data is available, keeping the result fully deterministic.
+ */
+export function sortByConnectivity(items: DiagramElementRecord[], adjacency: AdjacencyMap): DiagramElementRecord[] {
+  if (items.length <= 2) return items;
+
+  const weight = (a: string, b: string) => adjacency.get(a)?.get(b) ?? 0;
+  const totalWithinSet = (id: string) => items.reduce((sum, other) => (other.id === id ? sum : sum + weight(id, other.id)), 0);
+
+  const remaining = items.slice();
+  const start = remaining.reduce((best, item) => (totalWithinSet(item.id) > totalWithinSet(best.id) ? item : best), remaining[0]!);
+  const ordered: DiagramElementRecord[] = [start];
+  remaining.splice(remaining.indexOf(start), 1);
+
+  while (remaining.length) {
+    const current = ordered[ordered.length - 1]!;
+    let bestIndex = 0;
+    let bestWeight = -1;
+    remaining.forEach((candidate, index) => {
+      const candidateWeight = weight(current.id, candidate.id);
+      if (candidateWeight > bestWeight) {
+        bestWeight = candidateWeight;
+        bestIndex = index;
+      }
     });
-    fitContainer(zone, records, 24, 48, 24);
-  });
+    ordered.push(remaining[bestIndex]!);
+    remaining.splice(bestIndex, 1);
+  }
 
-  const roots = records.filter((record) => !record.parent && record.type !== 'zone');
-  roots.forEach((record, index) => {
-    if (record.type === 'actor') {
-      record.x = 0;
-      record.y = 120 + index * 110;
-    } else {
-      record.x = 350 + (index % 4) * 280;
-      record.y = 80 + zones.length * 520 + Math.floor(index / 4) * 120;
+  return ordered;
+}
+
+/**
+ * Places `items` into a row-major grid with the given column count, sizing each row/column from
+ * the elements' actual (already grown) width/height so that siblings never overlap. Descendants of
+ * each item are shifted along, since sizes were established bottom-up beforehand.
+ */
+function packAndTranslate(
+  items: DiagramElementRecord[],
+  columns: number,
+  gapX: number,
+  gapY: number,
+  originX: number,
+  originY: number,
+  records: DiagramElementRecord[]
+): void {
+  let y = originY;
+  for (let index = 0; index < items.length; index += columns) {
+    const rowItems = items.slice(index, index + columns);
+    let x = originX;
+    let rowHeight = 0;
+    for (const item of rowItems) {
+      translateSubtree(item, x - item.x, y - item.y, records);
+      x += item.w + gapX;
+      rowHeight = Math.max(rowHeight, item.h);
     }
-  });
-  void byId;
-  return { elements: records, noteCounter: 1 };
+    y += rowHeight + gapY;
+  }
 }
 
-function arrangeChildren(parent: DiagramElementRecord, records: DiagramElementRecord[], side: number, top: number, gap: number) {
-  const children = records.filter(({ parent: parentId }) => parentId === parent.id);
-  children.forEach((child, index) => {
-    child.x = parent.x + side;
-    child.y = parent.y + top + index * (child.h + gap);
-    moveDescendants(child, records, child.x, child.y);
-  });
-  fitContainer(parent, records, side, top, side);
+function translateSubtree(root: DiagramElementRecord, dx: number, dy: number, records: DiagramElementRecord[]): void {
+  if (dx === 0 && dy === 0) return;
+  root.x += dx;
+  root.y += dy;
+  for (const child of records.filter(({ parent }) => parent === root.id)) translateSubtree(child, dx, dy, records);
 }
 
-function moveDescendants(parent: DiagramElementRecord, records: DiagramElementRecord[], x: number, y: number) {
-  const children = records.filter(({ parent: parentId }) => parentId === parent.id);
-  children.forEach((child, index) => {
-    child.x = x + 16;
-    child.y = y + 38 + index * (child.h + 12);
-    moveDescendants(child, records, child.x, child.y);
-  });
-  if (children.length) fitContainer(parent, records, 16, 38, 16);
+function computeDepth(record: DiagramElementRecord, byId: Map<string, DiagramElementRecord>): number {
+  let depth = 0;
+  let current: DiagramElementRecord | undefined = record;
+  while (current?.parent) {
+    current = byId.get(current.parent);
+    depth += 1;
+  }
+  return depth;
+}
+
+/**
+ * Arranges the direct children of a single container in place (relative to the container's current
+ * position), then grows the container to fit them. Zones use a two-column grid, every other
+ * container (server, syssoft, ...) stacks its children in a single column - matching how the shapes
+ * are meant to be read (top-to-bottom for runtime/module nesting, 2D for zone contents).
+ */
+function arrangeContainer(parent: DiagramElementRecord, records: DiagramElementRecord[], adjacency: AdjacencyMap): void {
+  const rawChildren = records.filter(({ parent: parentId }) => parentId === parent.id);
+  if (!rawChildren.length) return;
+
+  const children = sortByConnectivity(rawChildren, adjacency);
+  const padding = containerPadding(parent.type);
+
+  if (parent.type === 'zone') {
+    packAndTranslate(children, ZONE_CHILD_GRID.columns, ZONE_CHILD_GRID.gapX, ZONE_CHILD_GRID.gapY, parent.x + padding.side, parent.y + padding.top, records);
+  } else {
+    packAndTranslate(children, 1, 0, CHILD_STACK_GAP, parent.x + padding.side, parent.y + padding.top, records);
+  }
+
+  fitContainer(parent, records, padding.side, padding.top, padding.bottom);
+}
+
+/**
+ * Two phases:
+ *  1. Bottom-up sizing - every container (deepest first) arranges its own children relative to its
+ *     current position and grows to fit them. Because every container starts at (0, 0), this yields
+ *     correct *relative* positions for entire subtrees without knowing their final absolute placement.
+ *  2. Top-down placement - root zones and root elements are placed into grids; translating a root
+ *     element by a delta cascades to all of its already-correctly-arranged descendants.
+ */
+function layoutElements(records: DiagramElementRecord[], adjacency: AdjacencyMap): void {
+  const byId = new Map(records.map((record) => [record.id, record]));
+  const containers = records
+    .filter((record) => records.some(({ parent }) => parent === record.id))
+    .sort((a, b) => computeDepth(b, byId) - computeDepth(a, byId));
+
+  for (const container of containers) arrangeContainer(container, records, adjacency);
+
+  const zones = sortByConnectivity(records.filter(({ type, parent }) => type === 'zone' && !parent), adjacency);
+  packAndTranslate(zones, ZONE_GRID.columns, ZONE_GRID.gapX, ZONE_GRID.gapY, LAYOUT_ORIGIN.zoneX, LAYOUT_ORIGIN.zoneY, records);
+
+  const zonesBottom = zones.length ? Math.max(...zones.map((zone) => zone.y + zone.h)) + ZONE_GRID.gapY : LAYOUT_ORIGIN.rootY;
+
+  const roots = records.filter(({ parent }) => !parent).filter((record) => record.type !== 'zone');
+  const actors = roots.filter(({ type }) => type === 'actor');
+  const others = sortByConnectivity(roots.filter(({ type }) => type !== 'actor'), adjacency);
+
+  packAndTranslate(actors, 1, 0, LAYOUT_ORIGIN.actorGapY, LAYOUT_ORIGIN.actorX, LAYOUT_ORIGIN.actorY, records);
+  packAndTranslate(others, ROOT_GRID.columns, ROOT_GRID.gapX, ROOT_GRID.gapY, LAYOUT_ORIGIN.rootX, zonesBottom, records);
 }
 
 function fitContainer(parent: DiagramElementRecord, records: DiagramElementRecord[], side: number, top: number, bottom: number) {
