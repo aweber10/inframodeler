@@ -133,6 +133,42 @@ describe('repositionMiddleware', () => {
     const overlap = esb1.x < esb2.x + esb2.w && esb1.x + esb1.w > esb2.x && esb1.y < esb2.y + esb2.h && esb1.y + esb1.h > esb2.y;
     expect(overlap).toBe(false);
   });
+
+  it('does not overlap a foreign network zone when bridging two zones', () => {
+    // A root-level esb bridging components in two zones. Its centroid would land inside zone_2;
+    // foreign zones must be treated as obstacles so the esb ends up off of them.
+    const zone1 = element('zone_1', 'zone', 0, 0, 400, 400);
+    const zone2 = element('zone_2', 'zone', 500, 0, 600, 400);
+    const inZone1 = element('module_1', 'module', 40, 180, 100, 40, 'zone_1');
+    const inZone2 = element('module_2', 'module', 700, 180, 100, 40, 'zone_2');
+    const esb = element('esb_1', 'esb', 3000, 3000, 200, 56);
+    const records = [zone1, zone2, inZone1, inZone2, esb];
+
+    repositionMiddleware(records, adjacencyOf([['esb_1', 'module_1', 1], ['esb_1', 'module_2', 1]]));
+
+    for (const zone of [zone1, zone2]) {
+      const hit = esb.x < zone.x + zone.w && esb.x + esb.w > zone.x && esb.y < zone.y + zone.h && esb.y + esb.h > zone.y;
+      expect(hit, `esb must not overlap ${zone.id}`).toBe(false);
+    }
+  });
+
+  it('does not remain on top of densely nested modules (module overlap regression)', () => {
+    // A server with a runtime and two modules, tightly packed - the esb target lands right on them.
+    const server = element('server_1', 'server', 0, 0, 260, 240);
+    const runtime = element('syssoft_1', 'syssoft', 20, 40, 220, 180, 'server_1');
+    const module1 = element('module_1', 'module', 40, 80, 156, 46, 'syssoft_1');
+    const module2 = element('module_2', 'module', 40, 140, 156, 46, 'syssoft_1');
+    const partner = element('db_1', 'db', 600, 100, 100, 80);
+    const esb = element('esb_1', 'esb', 5000, 5000, 200, 56);
+    const records = [server, runtime, module1, module2, partner, esb];
+
+    repositionMiddleware(records, adjacencyOf([['esb_1', 'module_1', 1], ['esb_1', 'db_1', 1]]));
+
+    for (const other of [server, runtime, module1, module2, partner]) {
+      const hit = esb.x < other.x + other.w && esb.x + esb.w > other.x && esb.y < other.y + other.h && esb.y + esb.h > other.y;
+      expect(hit, `esb must not overlap ${other.id}`).toBe(false);
+    }
+  });
 });
 
 describe('resolveNoteOverlaps', () => {

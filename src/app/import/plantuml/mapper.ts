@@ -172,7 +172,7 @@ function resolveMappedParent(
 }
 
 function canParent(parent: InfraType, child: InfraType): boolean {
-  return (parent === 'zone' && ['server', 'db', 'extsys', 'umsystem', 'actor', 'note'].includes(child)) ||
+  return (parent === 'zone' && ['server', 'db', 'esb', 'extsys', 'umsystem', 'actor', 'note'].includes(child)) ||
     (parent === 'server' && ['syssoft', 'module', 'db'].includes(child)) ||
     (parent === 'syssoft' && child === 'module');
 }
@@ -351,10 +351,6 @@ function center(record: DiagramElementRecord): { x: number; y: number } {
   return { x: record.x + record.w / 2, y: record.y + record.h / 2 };
 }
 
-function overlaps(a: DiagramElementRecord, b: DiagramElementRecord): boolean {
-  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
-}
-
 /**
  * Moves each middleware element (type 'esb') from its generic grid cell to sit *between* the
  * components it connects, rather than being lumped into a uniform block. Uses the already-resolved
@@ -436,22 +432,61 @@ function relatedIds(record: DiagramElementRecord, records: DiagramElementRecord[
   return related;
 }
 
+/** Signed penetration depth of the overlap between two rectangles (0 if they do not overlap). */
+function overlapArea(a: DiagramElementRecord, b: DiagramElementRecord): number {
+  const dx = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+  const dy = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+  return dx > 0 && dy > 0 ? dx * dy : 0;
+}
+
 /**
  * Nudges `record` out of any overlap with other elements. Considers every element except the
- * record's own containers (ancestors) and nested children, and zones (which are meant to contain
- * things). Overlaps are resolved along the axis of smaller penetration, one blocker at a time.
- * Best effort: gives up after a bounded number of attempts to stay deterministic and terminating.
+ * record's own containers (ancestors) and nested children; foreign zones ARE obstacles, so a
+ * middleware bridging two zones is pushed off of them. Each step resolves the strongest overlap
+ * (largest intersection area). For that blocker it tries all four escape directions and keeps the
+ * shortest move that does not immediately land the record inside another obstacle, so it can escape
+ * vertically when there is no horizontal room between containers (and vice versa).
  */
 function resolveOverlap(record: DiagramElementRecord, records: DiagramElementRecord[], byId: Map<string, DiagramElementRecord>): void {
   const related = relatedIds(record, records, byId);
-  const obstacles = records.filter((other) => !related.has(other.id) && other.type !== 'zone');
-  for (let attempt = 0; attempt < obstacles.length + 1; attempt += 1) {
-    const blocker = obstacles.find((other) => overlaps(record, other));
+  const obstacles = records.filter((other) => !related.has(other.id));
+  const totalOverlap = () => obstacles.reduce((sum, other) => sum + overlapArea(record, other), 0);
+
+  const maxAttempts = obstacles.length * 4 + 4;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    let blocker: DiagramElementRecord | undefined;
+    let worst = 0;
+    for (const other of obstacles) {
+      const area = overlapArea(record, other);
+      if (area > worst) {
+        worst = area;
+        blocker = other;
+      }
+    }
     if (!blocker) return;
-    const pushX = record.x + record.w / 2 < blocker.x + blocker.w / 2 ? blocker.x - record.w - record.x : blocker.x + blocker.w - record.x;
-    const pushY = record.y + record.h / 2 < blocker.y + blocker.h / 2 ? blocker.y - record.h - record.y : blocker.y + blocker.h - record.y;
-    if (Math.abs(pushX) <= Math.abs(pushY)) translateSubtree(record, pushX, 0, records);
-    else translateSubtree(record, 0, pushY, records);
+
+    // Candidate moves: push left, right, up or down clear of the current blocker.
+    const candidates = [
+      { dx: blocker.x - record.w - record.x, dy: 0 },
+      { dx: blocker.x + blocker.w - record.x, dy: 0 },
+      { dx: 0, dy: blocker.y - record.h - record.y },
+      { dx: 0, dy: blocker.y + blocker.h - record.y }
+    ];
+
+    let best: { dx: number; dy: number; residual: number; distance: number } | undefined;
+    for (const candidate of candidates) {
+      translateSubtree(record, candidate.dx, candidate.dy, records);
+      const residual = totalOverlap();
+      const distance = Math.abs(candidate.dx) + Math.abs(candidate.dy);
+      translateSubtree(record, -candidate.dx, -candidate.dy, records);
+      // Prefer the move with the least remaining overlap, breaking ties by shortest distance.
+      if (!best || residual < best.residual || (residual === best.residual && distance < best.distance)) {
+        best = { ...candidate, residual, distance };
+      }
+    }
+
+    if (!best) return;
+    translateSubtree(record, best.dx, best.dy, records);
   }
 }
 
