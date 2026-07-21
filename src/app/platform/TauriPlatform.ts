@@ -5,7 +5,7 @@ export default class TauriPlatform implements PlatformAdapter {
 
   async pickOpenPath(): Promise<string | null> {
     const { open } = await import('@tauri-apps/plugin-dialog');
-    return open({ multiple: false, directory: false, filters: [fileFilter()] });
+    return open({ multiple: false, directory: false, filters: [fileFilter(), plantUmlFilter()] });
   }
 
   async pickSavePath(suggestedName: string): Promise<string | null> {
@@ -92,4 +92,8 @@ export default class TauriPlatform implements PlatformAdapter {
 
 function fileFilter() {
   return { name: 'InfraModeler-Diagramm', extensions: ['imod.json'] };
+}
+
+function plantUmlFilter() {
+  return { name: 'PlantUML-Diagramm', extensions: ['puml', 'plantuml', 'pu'] };
 }

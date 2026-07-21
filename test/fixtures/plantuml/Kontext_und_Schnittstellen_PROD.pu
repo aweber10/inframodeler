@@ -1,0 +1,136 @@
+@startuml
+
+' Systemübersicht SAM - PROD
+' Kontext und Schnittstellen
+' Rekonstruiert anhand des bereitgestellten PNG-Exports
+
+skinparam monochrome false
+skinparam componentStyle uml2
+skinparam legendBackgroundColor #Orange/Yellow
+
+' Für eher geschwungene Verbindungen wie im Export:
+'skinparam linetype polyline
+
+title
+ <u>Übersicht SAM - Prod</u>
+ Kontext und Schnittstellen
+end title
+
+frame "Schadenmanagementsystem SAM" as sam {
+
+  actor User
+
+  note right of User
+    BS/WOB
+    Zugriffe über das <b>VW-Intranet</b>
+  end note
+
+  node Client {
+    [Web-Browser]
+  }
+
+  User --> [Web-Browser]
+
+  node sam.vw.vwg as webseal {
+    [Reverse-Proxy]
+  }
+
+  note right of webseal
+    Authentifizierung per PKI
+  end note
+
+  node "lxf202p1077.wob.vw.vwg" as apphost {
+
+    [rvsEvo (Station KAZ)] as evo
+
+    frame "Websphere Liberty Profile" as wlp {
+      [SAM Web]
+      [SAM REST]
+      [SAM Reporting]
+    }
+
+    node "exa118r05s09.b2x.vwg" as dbhost {
+      database "SAMP" as db
+    }
+
+    db <--> evo
+  }
+}
+
+frame "Internet" as internet {
+  actor Customer
+  node "4Sales Schadenmeldung" as sales4
+  Customer --> sales4 : HTTPS
+}
+
+frame "Systeme des VW-Konzerns" as vw_systems {
+  node WandaGF
+  node PROFIS
+  node GFT #Orange/Yellow
+  node "SAP-IPS HR-VW" as saphr
+  node UMS
+  node Kundencenter as kundencenter
+}
+
+frame "Systeme der FSAG" as fs_systems {
+  node "DS MG / DS Prot" as dsmg
+  node "Aditus IIQ" as aditus
+  node "WA-Leasing" as leasing
+  node uEKA
+  node zVertrag
+  node "Service Factory" as servicefactory
+  node iSport
+}
+
+' --- Schnittstellen / Gateways
+interface "RVS" as rvs
+interface "Connect:Direct" as connectdirect
+interface "DataPower (DE)" as datapower_fs
+interface "DataPower VW" as datapower_vw
+interface "RW.IL" as rwil
+
+' --- Verbindungen (gemäß Export)
+[Web-Browser] --> [Reverse-Proxy] : HTTPS
+[Reverse-Proxy] --> wlp : HTTPS
+
+[SAM Web] --> db : JDBC
+
+[SAM Web] --> saphr : RFC
+[SAM Web] --> UMS : AIS-API
+
+[SAM REST] --> kundencenter : mail
+
+[SAM REST] <--> datapower_vw : SOAP
+
+sales4 --> rwil : REST
+rwil --> [Reverse-Proxy]
+
+iSport <..> rwil
+
+' RVS / Connect:Direct
+evo <--> rvs
+rvs --> leasing
+rvs <--> WandaGF
+rvs <--> PROFIS
+rvs --> GFT
+rvs --> connectdirect
+connectdirect --> aditus
+connectdirect <..> dsmg
+
+' DataPower
+datapower_vw <--> datapower_fs : SOAP
+
+datapower_fs --> uEKA : SOAP
+datapower_fs <..> zVertrag : SOAP
+
+datapower_vw --> servicefactory
+
+' Layout-Hilfe (Internet rechts)
+sam --[hidden]- internet
+
+legend bottom right
+  Schnittstellen sind geplant
+  bzw. in Entwicklung
+endlegend
+
+@enduml

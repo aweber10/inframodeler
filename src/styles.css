@@ -96,6 +96,20 @@ body {
   font: 13px Inter, sans-serif;
 }
 
+.import-dialog {
+  max-height: min(650px, calc(100vh - 40px));
+}
+
+.import-dialog ul {
+  max-height: 320px;
+  margin: 0 0 22px;
+  padding-left: 22px;
+  overflow-y: auto;
+  color: #52606d;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .dialog-actions {
   display: flex;
   justify-content: flex-end;

@@ -7,7 +7,7 @@ export default class BrowserPlatform implements PlatformAdapter {
   async pickOpenPath(): Promise<string | null> {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.json,.imod.json,application/json';
+    input.accept = '.json,.imod.json,.puml,.plantuml,.pu,application/json,text/plain';
     const file = await new Promise<File | null>((resolve) => {
       input.addEventListener('change', () => resolve(input.files?.[0] ?? null), { once: true });
       input.click();

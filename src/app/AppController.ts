@@ -9,6 +9,8 @@ import { createDemo } from '../editor/demo';
 import type InfraElementFactory from '../editor/infra/InfraElementFactory';
 import DocumentSession from './DocumentSession';
 import { exportSvg as renderSvg } from './export/exportSvg';
+import { importPlantUml, isPlantUmlPath } from './import/plantuml/importPlantUml';
+import type PlantUmlImportDialog from './PlantUmlImportDialog';
 import type { PlatformAdapter, AppAction } from './platform/PlatformAdapter';
 import RecentFiles from './RecentFiles';
 import { parseRecovery, RECOVERY_VERSION, stringifyRecovery } from './Recovery';
@@ -48,6 +50,7 @@ export default class AppController {
     private readonly platform: PlatformAdapter,
     private readonly unsavedDialog: UnsavedChangesDialog,
     private readonly recoveryDialog: RecoveryDialog,
+    private readonly plantUmlImportDialog: PlantUmlImportDialog,
     private readonly recentContainer: HTMLElement | null
   ) {
     this.canvas = diagram.get('canvas');
@@ -121,6 +124,10 @@ export default class AppController {
     if (confirm && !await this.confirmDiscardChanges()) return;
     try {
       const source = await this.platform.readText(path);
+      if (isPlantUmlPath(path)) {
+        await this.openPlantUml(path, source);
+        return;
+      }
       const file = parseDiagramFile(source);
       importDiagram(this.diagram, file);
       this.documentExtensions = file.extensions;
@@ -134,6 +141,20 @@ export default class AppController {
       this.renderRecentFiles();
       throw error;
     }
+  }
+
+  private async openPlantUml(path: string, source: string): Promise<void> {
+    const result = importPlantUml(source);
+    if (result.warnings.length && !await this.plantUmlImportDialog.show(result.warnings, result.statistics)) return;
+
+    importDiagram(this.diagram, result.file);
+    this.documentExtensions = result.file.extensions;
+    const snapshot = stringifyDiagramFile(result.file);
+    this.session.reset(stringifyDiagramFile(EMPTY_FILE), null, result.file.title || fileName(path));
+    this.session.update(snapshot);
+    if (this.platform.isDesktop) this.recentFiles.add(path);
+    this.renderRecentFiles();
+    await this.refreshState();
   }
 
   private async save(): Promise<boolean> {
@@ -277,7 +298,7 @@ function ensureExtension(path: string): string {
 }
 
 function defaultFileName(title: string): string {
-  const base = title === 'Unbenannt' ? 'diagramm' : title.toLowerCase().replace(/[^a-z0-9_-]+/g, '-');
+  const base = title === 'Unbenannt' ? 'diagramm' : slugify(title);
   return `${base}.imod.json`;
 }
 
@@ -290,10 +311,20 @@ function errorMessage(error: unknown): string {
 }
 
 function exportFileName(title: string): string {
-  const base = title === 'Unbenannt' ? 'diagramm' : title.toLowerCase().replace(/[^a-z0-9_-]+/g, '-');
+  const base = title === 'Unbenannt' ? 'diagramm' : slugify(title);
   return `${base}.svg`;
 }
 
 function ensureExportExtension(path: string): string {
   return path.toLowerCase().endsWith('.svg') ? path : `${path}.svg`;
+}
+
+function slugify(value: string): string {
+  return value
+    .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue')
+    .replace(/Ä/g, 'Ae').replace(/Ö/g, 'Oe').replace(/Ü/g, 'Ue')
+    .replace(/ß/g, 'ss')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'diagramm';
 }

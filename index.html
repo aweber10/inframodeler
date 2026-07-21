@@ -57,6 +57,15 @@
         <button type="button" data-recovery="restore" class="primary">Wiederherstellen</button>
       </div>
     </dialog>
+    <dialog id="plantuml-import-dialog" class="app-dialog import-dialog">
+      <h2>PlantUML importieren</h2>
+      <p data-import-summary></p>
+      <ul data-import-warnings></ul>
+      <div class="dialog-actions">
+        <button type="button" data-import="cancel">Abbrechen</button>
+        <button type="button" data-import="confirm" class="primary">Importieren</button>
+      </div>
+    </dialog>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

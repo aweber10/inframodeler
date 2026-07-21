@@ -35,6 +35,12 @@
         "name": "InfraModeler-Diagramm",
         "description": "InfraModeler-Diagramm",
         "role": "Editor"
+      },
+      {
+        "ext": ["puml", "plantuml", "pu"],
+        "name": "PlantUML-Diagramm",
+        "description": "PlantUML-Diagramm zum Import in InfraModeler",
+        "role": "Editor"
       }
     ],
     "macOS": {

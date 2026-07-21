@@ -11,6 +11,7 @@ use tauri::{
 use tauri_plugin_fs::FsExt;
 
 const FILE_SUFFIX: &str = ".imod.json";
+const IMPORT_SUFFIXES: &[&str] = &[FILE_SUFFIX, ".puml", ".plantuml", ".pu"];
 const RECOVERY_FILE: &str = "recovery.json";
 
 struct InitialPath(Mutex<Option<String>>);
@@ -22,7 +23,7 @@ fn take_initial_path(state: tauri::State<'_, InitialPath>) -> Option<String> {
 
 #[tauri::command]
 fn allow_diagram_path(app: AppHandle, path: String) -> Result<(), String> {
-    if !path.ends_with(FILE_SUFFIX) {
+    if !IMPORT_SUFFIXES.iter().any(|suffix| path.ends_with(suffix)) {
         return Err("Ungültige Dateiendung".into());
     }
     app.fs_scope()
@@ -215,7 +216,10 @@ fn menu_action(id: &str) -> Option<&'static str> {
 
 fn diagram_path(args: &[String], cwd: &Path) -> Option<PathBuf> {
     args.iter().skip(1).find_map(|argument| {
-        if !argument.ends_with(FILE_SUFFIX) {
+        if !IMPORT_SUFFIXES
+            .iter()
+            .any(|suffix| argument.ends_with(suffix))
+        {
             return None;
         }
         let path = PathBuf::from(argument);

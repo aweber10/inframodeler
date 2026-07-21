@@ -56,9 +56,13 @@ Die visuelle Unterscheidung von E-08 und E-09 (gestrichelt + Stereotyp vs. solid
 
 Kontextabhängige Standard-Labels beim Erzeugen (überschreibbar): Ziel Datenbank → `JDBC`; Ziel/Quelle ESB → `REST / SOAP`; Ziel Modul → `REST`; Quelle Aktor → `HTTPS`; Umsystem/Externes System → `REST / SOAP`.
 
+Eine verbindliche Quell-/Ziel-Matrix für zulässige Verbindungen ist bewusst nicht Teil dieses Dokuments. V1 verbietet nur Selbstverbindungen, Verbindungen mit einer Netzwerkzone als Endpunkt sowie Notiz-zu-Notiz-Verbindungen; alle übrigen Kombinationen sind zulässig. Diese permissive Regel ist eine bewusste Zwischenentscheidung: Eine engere Matrix wird erst auf Basis der praktischen Nutzung ergänzt, falls sich ein Bedarf zeigt.
+
 ### 2.3 Enthaltensein-Regeln
 
 Die Spalte "Kann enthalten" in 2.1 ist normativ. Das Werkzeug erzwingt diese Regeln: Unzulässiges Ablegen wird verhindert (nicht nur gewarnt). Blackbox-Typen (E-08, E-09) haben grundsätzlich kein Innenleben.
+
+Auf der Wurzelebene des Diagramms (außerhalb jedes Containers) lässt das Werkzeug derzeit jeden Elementtyp zu, auch Software-Module und Systemsoftware, die fachlich normalerweise in Server bzw. Systemsoftware eingebettet sind. Diese offene Root-Platzierung ist eine bewusste Zwischenentscheidung; eine Einschränkung erfolgt erst, falls die praktische Nutzung einen Bedarf dafür zeigt.
 
 ---
 
@@ -67,7 +71,7 @@ Die Spalte "Kann enthalten" in 2.1 ist normativ. Das Werkzeug erzwingt diese Reg
 Die folgenden Annahmen wurden vom Autor getroffen und sind vom Fachbereich zu bestätigen:
 
 - **A-01** Oberflächensprache ist Deutsch; die Architektur sieht Übersetzbarkeit vor, eine zweite Sprache ist für V1 nicht gefordert.
-- **A-02** Exportformate in V1 sind SVG und PNG. PDF-Export ist für eine Folgeversion vorgesehen.
+- **A-02** Exportformat in V1 ist SVG. PDF-Export ist für eine Folgeversion vorgesehen.
 - **A-03** Ein Element-Template-Katalog (vorkonfigurierte Bausteine wie "WLP", "Oracle 19c", konzernspezifische ESB-Instanzen) ist als V1.1 eingeplant, nicht V1.
 - **A-04** Das Entwicklungsteam besteht aus 1–3 Personen (duale Studierende plus Betreuer) mit TypeScript-Kenntnissen; Rust-Kenntnisse sind nur minimal erforderlich (siehe technisches Konzept).
 - **A-05** Die Anwendung wird intern verteilt (kein öffentlicher Store); Code-Signing wird angestrebt, ist aber kein V1-Blocker.
@@ -119,10 +123,10 @@ Priorisierung nach MoSCoW: **[M]** Muss (V1), **[S]** Soll (V1, verhandelbar), *
 ### 4.4 Export und Austausch
 
 - **F-40 [M] SVG-Export** des gesamten Diagramms in eine eigenständige Datei mit eingebetteten Stilen; das Ergebnis entspricht 1:1 der Bildschirmdarstellung (ohne Auswahl-Markierungen).
-- **F-41 [M] PNG-Export** mit wählbarem Skalierungsfaktor (1×–4×) für Präsentationen und Wikis.
 - **F-42 [S] Export in die Zwischenablage** (Bild), für schnelles Einfügen in Chats und Dokumente.
 - **F-43 [K] PDF-Export.**
 - **F-44 [K] Textueller Export** (PlantUML- oder Structurizr-DSL-Skizze) zur Weiterverarbeitung.
+- **F-45 [S] PlantUML-Import.** Ein Untermenge des PlantUML-Deployment-Diagramm-Formats (`.puml`/`.plantuml`/`.pu`) kann geöffnet und auf das Metamodell aus Kapitel 2 abgebildet werden. Nicht eindeutig zuordenbare Konstrukte werden über Heuristiken gemappt und dem Anwender in einer Warnungsübersicht angezeigt. Ein importiertes Diagramm gilt als ungespeichert (dirty, ohne Pfad) und wird nie automatisch in die ursprüngliche PlantUML-Quelldatei zurückgeschrieben.
 
 ### 4.5 Hilfe und Einstieg
 
@@ -148,9 +152,9 @@ Priorisierung nach MoSCoW: **[M]** Muss (V1), **[S]** Soll (V1, verhandelbar), *
 
 ## 6. Priorisierter Lieferumfang
 
-**V1 (produktiv nutzbar):** F-01–F-04, F-10–F-18, F-30, F-40, F-41, F-50; alle [M]-NFRs. Damit ist der komplette POC-Funktionsumfang plus Datei-Lebenszyklus und Export abgedeckt – in Framework-Qualität.
+**V1 (produktiv nutzbar):** F-01–F-04, F-05, F-10–F-22, F-30, F-40, F-45, F-50; alle [M]-NFRs. Damit ist der komplette POC-Funktionsumfang plus Datei-Lebenszyklus, Absturzsicherung, Komfortgesten und Export abgedeckt – in Framework-Qualität.
 
-**V1.x (Komfort):** F-05, F-19–F-22, F-31, F-42, F-51, F-52, N-07, N-08.
+**V1.x (Komfort):** F-31, F-42, F-51, F-52, N-07, N-08.
 
 **V2 (Ausbau):** F-06, F-23, F-32, F-33, F-43, F-44.
 
