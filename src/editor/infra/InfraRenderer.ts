@@ -11,6 +11,7 @@ const FONT = '"JetBrains Mono", monospace';
 const SANS = 'Inter, sans-serif';
 const PRIORITY = 1500;
 const ARROW_MARKER_ID = 'infra-arrow';
+const GEAR_PATH = 'M8.27,4.05 L8.82,1.68 L11.18,1.68 L11.73,4.05 L12.99,4.57 L15.04,3.28 L16.72,4.96 L15.43,7.01 L15.95,8.27 L18.32,8.82 L18.32,11.18 L15.95,11.73 L15.43,12.99 L16.72,15.04 L15.04,16.72 L12.99,15.43 L11.73,15.95 L11.18,18.32 L8.82,18.32 L8.27,15.95 L7.01,15.43 L4.96,16.72 L3.28,15.04 L4.57,12.99 L4.05,11.73 L1.68,11.18 L1.68,8.82 L4.05,8.27 L4.57,7.01 L3.28,4.96 L4.96,3.28 L7.01,4.57 Z';
 
 function svg(
   parent: SVGElement,
@@ -73,8 +74,11 @@ export default class InfraRenderer extends BaseRenderer {
       }
       case 'syssoft':
         svg(parent, 'rect', { width: w, height: h, rx: 6, fill: '#f5f7fa', stroke: '#616e7c', 'stroke-width': 1.3 });
-        svg(parent, 'circle', { cx: 18, cy: 17, r: 5, fill: 'none', stroke: '#3e4c59', 'stroke-width': 1.2 });
-        svg(parent, 'path', { d: 'M18 8v4M18 22v4M9 17h4M23 17h4M12 11l3 3M21 20l3 3M24 11l-3 3M15 20l-3 3', fill: 'none', stroke: '#3e4c59', 'stroke-width': 1.1 });
+        {
+          const gear = svg(parent, 'g', { transform: 'translate(7, 6) scale(1.1)' }) as SVGGElement;
+          svg(gear, 'path', { d: GEAR_PATH, fill: 'none', stroke: '#3e4c59', 'stroke-width': 1.1, 'stroke-linejoin': 'round' });
+          svg(gear, 'circle', { cx: 10, cy: 10, r: 2.7, fill: 'none', stroke: '#3e4c59', 'stroke-width': 1.1 });
+        }
         svg(parent, 'text', { x: 32, y: 21, 'font-family': FONT, 'font-size': 11.5, fill: '#3e4c59' }, name);
         break;
       case 'module':
