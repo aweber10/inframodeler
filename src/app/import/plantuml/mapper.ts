@@ -1,7 +1,7 @@
 import { TYPE_DEFINITIONS, type InfraType } from '../../../editor/infra/meta/types';
 import { CURRENT_FORMAT_VERSION, FORMAT_NAME, type DiagramConnectionRecord, type DiagramElementRecord, type DiagramFile } from '../../serialization/format';
 import type { PlantUmlDeclaration, PlantUmlDocument, PlantUmlRelation, PlantUmlWarning } from './ast';
-import { CHILD_STACK_GAP, LAYOUT_ORIGIN, ROOT_GRID, ZONE_CHILD_GRID, ZONE_GRID, containerPadding } from './layout-constants';
+import { CHILD_STACK_GAP, LAYOUT_ORIGIN, MIDDLEWARE_SINGLE_NEIGHBOR_GAP, ROOT_GRID, ZONE_CHILD_GRID, ZONE_GRID, containerPadding } from './layout-constants';
 
 interface MappedElement {
   sourceUid: string;
@@ -339,6 +339,90 @@ function layoutElements(records: DiagramElementRecord[], adjacency: AdjacencyMap
 
   packAndTranslate(actors, 1, 0, LAYOUT_ORIGIN.actorGapY, LAYOUT_ORIGIN.actorX, LAYOUT_ORIGIN.actorY, records);
   packAndTranslate(others, ROOT_GRID.columns, ROOT_GRID.gapX, ROOT_GRID.gapY, LAYOUT_ORIGIN.rootX, zonesBottom, records);
+
+  repositionMiddleware(records, adjacency);
+}
+
+function center(record: DiagramElementRecord): { x: number; y: number } {
+  return { x: record.x + record.w / 2, y: record.y + record.h / 2 };
+}
+
+function overlaps(a: DiagramElementRecord, b: DiagramElementRecord): boolean {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+/**
+ * Moves each middleware element (type 'esb') from its generic grid cell to sit *between* the
+ * components it connects, rather than being lumped into a uniform block. Uses the already-resolved
+ * connection weights:
+ *  - no neighbours: left untouched
+ *  - one neighbour: nudged just next to that neighbour
+ *  - two or more:   placed at the (weighted) centroid of its neighbours' centres
+ *
+ * The target is clamped to the middleware's own parent container (no reparenting) and, if it would
+ * overlap a sibling, nudged along the axis of smaller penetration as a best-effort de-collision.
+ */
+export function repositionMiddleware(records: DiagramElementRecord[], adjacency: AdjacencyMap): void {
+  const byId = new Map(records.map((record) => [record.id, record]));
+
+  for (const esb of records.filter(({ type }) => type === 'esb')) {
+    const neighbourWeights = adjacency.get(esb.id);
+    if (!neighbourWeights?.size) continue;
+
+    const neighbours = [...neighbourWeights.entries()]
+      .map(([id, weight]) => ({ record: byId.get(id), weight }))
+      .filter((entry): entry is { record: DiagramElementRecord; weight: number } => Boolean(entry.record));
+    if (!neighbours.length) continue;
+
+    let targetCenter: { x: number; y: number };
+    if (neighbours.length === 1) {
+      const partner = center(neighbours[0]!.record);
+      // Nudge next to the single partner, on the side the middleware currently sits, so we do not
+      // always collapse onto the exact same spot.
+      const direction = center(esb).x >= partner.x ? 1 : -1;
+      targetCenter = { x: partner.x + direction * (neighbours[0]!.record.w / 2 + esb.w / 2 + MIDDLEWARE_SINGLE_NEIGHBOR_GAP), y: partner.y };
+    } else {
+      const totalWeight = neighbours.reduce((sum, { weight }) => sum + weight, 0);
+      targetCenter = neighbours.reduce(
+        (acc, { record, weight }) => {
+          const c = center(record);
+          return { x: acc.x + (c.x * weight) / totalWeight, y: acc.y + (c.y * weight) / totalWeight };
+        },
+        { x: 0, y: 0 }
+      );
+    }
+
+    const dx = targetCenter.x - esb.w / 2 - esb.x;
+    const dy = targetCenter.y - esb.h / 2 - esb.y;
+    translateSubtree(esb, dx, dy, records);
+    clampToParent(esb, byId);
+    resolveSiblingOverlap(esb, records);
+  }
+}
+
+function clampToParent(esb: DiagramElementRecord, byId: Map<string, DiagramElementRecord>): void {
+  if (!esb.parent) return;
+  const parent = byId.get(esb.parent);
+  if (!parent) return;
+  const padding = containerPadding(parent.type);
+  const minX = parent.x + padding.side;
+  const minY = parent.y + padding.top;
+  const maxX = parent.x + parent.w - padding.side - esb.w;
+  const maxY = parent.y + parent.h - padding.bottom - esb.h;
+  esb.x = Math.min(Math.max(esb.x, minX), Math.max(minX, maxX));
+  esb.y = Math.min(Math.max(esb.y, minY), Math.max(minY, maxY));
+}
+
+function resolveSiblingOverlap(esb: DiagramElementRecord, records: DiagramElementRecord[]): void {
+  const siblings = records.filter((record) => record !== esb && record.parent === esb.parent && record.type !== 'zone');
+  for (let attempt = 0; attempt < siblings.length; attempt += 1) {
+    const blocker = siblings.find((sibling) => overlaps(esb, sibling));
+    if (!blocker) return;
+    const pushX = esb.x + esb.w / 2 < blocker.x + blocker.w / 2 ? blocker.x - esb.w - esb.x : blocker.x + blocker.w - esb.x;
+    const pushY = esb.y + esb.h / 2 < blocker.y + blocker.h / 2 ? blocker.y - esb.h - esb.y : blocker.y + blocker.h - esb.y;
+    if (Math.abs(pushX) <= Math.abs(pushY)) esb.x += pushX;
+    else esb.y += pushY;
+  }
 }
 
 function fitContainer(parent: DiagramElementRecord, records: DiagramElementRecord[], side: number, top: number, bottom: number) {

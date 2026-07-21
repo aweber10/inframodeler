@@ -25,6 +25,9 @@ export const ROOT_GRID = { columns: 4, gapX: 30, gapY: 30 };
 /** Fixed offsets for the very first zone / root row. */
 export const LAYOUT_ORIGIN = { zoneX: 80, zoneY: 60, actorX: 0, actorY: 120, actorGapY: 28, rootX: 350, rootY: 80 };
 
+/** Offset used when a middleware element with a single neighbour is nudged next to that neighbour. */
+export const MIDDLEWARE_SINGLE_NEIGHBOR_GAP = 40;
+
 export function containerPadding(type: string): ContainerPadding {
   return (CONTAINER_PADDING as Record<string, ContainerPadding | undefined>)[type] ?? DEFAULT_CONTAINER_PADDING;
 }
