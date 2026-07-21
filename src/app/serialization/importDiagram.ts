@@ -1,6 +1,7 @@
 import type Diagram from 'diagram-js';
 import type CommandStack from 'diagram-js/lib/command/CommandStack';
 import type Canvas from 'diagram-js/lib/core/Canvas';
+import type ElementRegistry from 'diagram-js/lib/core/ElementRegistry';
 import type Modeling from 'diagram-js/lib/features/modeling/Modeling';
 import type Selection from 'diagram-js/lib/features/selection/Selection';
 import type { Parent } from 'diagram-js/lib/model/Types';
@@ -16,6 +17,7 @@ export function importDiagram(diagram: Diagram, file: DiagramFile): void {
   const canvas = diagram.get<Canvas>('canvas');
   const commandStack = diagram.get<CommandStack>('commandStack');
   const elementFactory = diagram.get<InfraElementFactory>('elementFactory');
+  const elementRegistry = diagram.get<ElementRegistry>('elementRegistry');
   const modeling = diagram.get<Modeling>('modeling');
   const selection = diagram.get<Selection>('selection');
   const root = canvas.getRootElement() as Parent;
@@ -67,7 +69,7 @@ export function importDiagram(diagram: Diagram, file: DiagramFile): void {
       waypointExtensions: record.waypoints.map(({ extensions }) => extensions)
     });
     const createdConnection = modeling.connect(source, target, connection);
-    modeling.updateWaypoints(createdConnection, normalizeDocking(createdConnection));
+    modeling.updateWaypoints(createdConnection, normalizeDocking(createdConnection, elementRegistry));
   }
 
   selection.select([]);
