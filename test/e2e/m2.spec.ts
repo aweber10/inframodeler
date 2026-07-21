@@ -33,6 +33,51 @@ test('saves and reopens a diagram in browser mode', async ({ page }) => {
   await expect(page.locator('[data-element-id="module_webshop"]')).toBeVisible();
 });
 
+test('preserves connection course and endpoints when reopening a saved diagram', async ({ page }) => {
+  await page.goto('/');
+
+  const file = {
+    format: 'inframodeler',
+    formatVersion: 1,
+    title: 'Waypoints',
+    elements: [
+      { id: 'module_a', type: 'module', name: 'A', x: 100, y: 100, w: 156, h: 46 },
+      { id: 'database_b', type: 'db', name: 'B', x: 600, y: 400, w: 132, h: 88 }
+    ],
+    connections: [
+      {
+        id: 'connection_route', source: 'module_a', target: 'database_b', kind: 'communication', label: 'JDBC',
+        waypoints: [
+          { x: 256, y: 123 },
+          { x: 400, y: 123 },
+          { x: 400, y: 260 },
+          { x: 520, y: 260 },
+          { x: 666, y: 400 }
+        ]
+      }
+    ]
+  };
+
+  const chooserPromise = page.waitForEvent('filechooser');
+  await page.locator('[data-app-action="open"]').click();
+  const chooser = await chooserPromise;
+  await chooser.setFiles({ name: 'waypoints.imod.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(file)) });
+
+  await expect(page.locator('[data-element-id="connection_route"]')).toBeVisible();
+
+  // Re-export via save and confirm the stored waypoints survived the editor round-trip verbatim.
+  const downloadPromise = page.waitForEvent('download');
+  await page.locator('[data-app-action="save"]').click();
+  const download = await downloadPromise;
+  const stream = await download.createReadStream();
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream!) chunks.push(Buffer.from(chunk));
+  const reexported = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+
+  const connection = reexported.connections.find((entry: { id: string }) => entry.id === 'connection_route');
+  expect(connection.waypoints).toEqual(file.connections[0]!.waypoints);
+});
+
 test('creates and edits a JDBC database through the context pad', async ({ page }) => {
   await page.goto('/');
   await page.locator('[data-app-action="example"]').click();

@@ -147,7 +147,7 @@ export default class AppController {
     const result = importPlantUml(source);
     if (result.warnings.length && !await this.plantUmlImportDialog.show(result.warnings, result.statistics)) return;
 
-    importDiagram(this.diagram, result.file);
+    importDiagram(this.diagram, result.file, { routeConnections: true });
     this.documentExtensions = result.file.extensions;
     const snapshot = stringifyDiagramFile(result.file);
     this.session.reset(stringifyDiagramFile(EMPTY_FILE), null, result.file.title || fileName(path));

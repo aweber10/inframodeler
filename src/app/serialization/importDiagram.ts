@@ -8,10 +8,20 @@ import type { Parent } from 'diagram-js/lib/model/Types';
 
 import type InfraElementFactory from '../../editor/infra/InfraElementFactory';
 import type { InfraShape } from '../../editor/infra/InfraElementFactory';
-import type { DiagramFile } from './format';
 import { normalizeDocking } from '../../editor/infra/InfraLayouter';
+import type { DiagramFile } from './format';
 
-export function importDiagram(diagram: Diagram, file: DiagramFile): void {
+export interface ImportDiagramOptions {
+  /**
+   * When true, connection waypoints are (re)routed via the Manhattan layouter after creation.
+   * Only useful for sources without meaningful stored waypoints (e.g. the PlantUML import, which
+   * emits placeholder waypoints). For native .imod.json files this must stay false so the stored
+   * course and endpoints are preserved verbatim.
+   */
+  routeConnections?: boolean;
+}
+
+export function importDiagram(diagram: Diagram, file: DiagramFile, options: ImportDiagramOptions = {}): void {
   diagram.clear();
 
   const canvas = diagram.get<Canvas>('canvas');
@@ -68,8 +78,12 @@ export function importDiagram(diagram: Diagram, file: DiagramFile): void {
       extensions: record.extensions,
       waypointExtensions: record.waypoints.map(({ extensions }) => extensions)
     });
+    // Native .imod.json files carry the exact stored course and endpoints - keep them verbatim.
+    // Only sources with placeholder waypoints (PlantUML import) opt into re-routing.
     const createdConnection = modeling.connect(source, target, connection);
-    modeling.updateWaypoints(createdConnection, normalizeDocking(createdConnection, elementRegistry));
+    if (options.routeConnections) {
+      modeling.updateWaypoints(createdConnection, normalizeDocking(createdConnection, elementRegistry));
+    }
   }
 
   selection.select([]);
