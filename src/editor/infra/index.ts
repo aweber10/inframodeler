@@ -13,6 +13,7 @@ import InfraLayouter from './InfraLayouter';
 import InfraPalette from './InfraPalette';
 import InfraRenderer from './InfraRenderer';
 import InfraResizeBehavior from './InfraResizeBehavior';
+import InfraRoutingBehavior from './InfraRoutingBehavior';
 import InfraRules from './InfraRules';
 
 export default {
@@ -27,6 +28,7 @@ export default {
     'infraConnectionParentBehavior',
     'infraFitBehavior',
     'infraResizeBehavior',
+    'infraRoutingBehavior',
     'infraDirectEditing',
     'infraContextPad'
   ],
@@ -43,6 +45,7 @@ export default {
   infraConnectionParentBehavior: ['type', InfraConnectionParentBehavior],
   infraFitBehavior: ['type', InfraFitBehavior],
   infraResizeBehavior: ['type', InfraResizeBehavior],
+  infraRoutingBehavior: ['type', InfraRoutingBehavior],
   infraDirectEditing: ['type', InfraDirectEditing],
   infraContextPad: ['type', InfraContextPad],
   connectionDocking: ['type', CroppingConnectionDocking],

@@ -8,6 +8,8 @@ import {
   pickPreferredLayout,
   resolveDockingSides,
   segmentIntersectsRect,
+  separateParallelSegments,
+  simplifyWaypoints,
   type FanConnection,
   type Rect
 } from '../src/editor/infra/connectionRouting';
@@ -125,5 +127,47 @@ describe('nudgeMiddleSegment', () => {
   it('returns undefined when there is no axis-aligned segment to nudge', () => {
     const waypoints = [{ x: 0, y: 0 }, { x: 100, y: 100 }];
     expect(nudgeMiddleSegment(waypoints, [rect(40, 40, 20, 20)])).toBeUndefined();
+  });
+
+  it('never moves a blocked docking segment', () => {
+    const waypoints = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 200, y: 100 }];
+    expect(nudgeMiddleSegment(waypoints, [rect(40, -10, 20, 20)])).toBeUndefined();
+    expect(waypoints[0]).toEqual({ x: 0, y: 0 });
+    expect(waypoints[1]).toEqual({ x: 100, y: 0 });
+  });
+
+  it('iteratively avoids two obstacles in a corridor', () => {
+    const waypoints = [{ x: 0, y: 0 }, { x: 40, y: 0 }, { x: 40, y: 200 }, { x: 200, y: 200 }];
+    const obstacles = [rect(30, 40, 20, 30), rect(30, 120, 20, 30)];
+    const nudged = nudgeMiddleSegment(waypoints, obstacles);
+    expect(nudged).toBeDefined();
+    expect(findBlockingObstacle(nudged!, obstacles)).toBeUndefined();
+  });
+});
+
+describe('simplifyWaypoints', () => {
+  it('removes duplicate and collinear intermediate points', () => {
+    expect(simplifyWaypoints([{ x: 0, y: 0 }, { x: 50, y: 0 }, { x: 100, y: 0 }])).toEqual([
+      { x: 0, y: 0 }, { x: 100, y: 0 }
+    ]);
+  });
+
+  it('collapses a four pixel stair step', () => {
+    expect(simplifyWaypoints([
+      { x: 0, y: 0 }, { x: 50, y: 0 }, { x: 50, y: 4 }, { x: 100, y: 4 }, { x: 100, y: 100 }
+    ])).toEqual([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }]);
+  });
+});
+
+describe('separateParallelSegments', () => {
+  it('fans out overlapping inner segments while preserving docking segments', () => {
+    const connections = ['a', 'b'].map((id) => ({ id, waypoints: [
+      { x: 0, y: 0 }, { x: 40, y: 0 }, { x: 40, y: 100 }, { x: 100, y: 100 }
+    ] }));
+    const separated = separateParallelSegments(connections);
+    expect(separated[0]!.waypoints[1]!.x).toBe(32);
+    expect(separated[1]!.waypoints[1]!.x).toBe(48);
+    expect(separated[0]!.waypoints[0]).toEqual(connections[0]!.waypoints[0]);
+    expect(separated[0]!.waypoints[3]).toEqual(connections[0]!.waypoints[3]);
   });
 });

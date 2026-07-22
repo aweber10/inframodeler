@@ -4,7 +4,7 @@ import type ElementRegistry from 'diagram-js/lib/core/ElementRegistry';
 import type { Connection, Shape } from 'diagram-js/lib/model/Types';
 import type { Point } from 'diagram-js/lib/util/Types';
 
-import { computeDockingAnchor, findBlockingObstacle, nudgeMiddleSegment, resolveDockingSides, type DockingSide, type FanConnection } from './connectionRouting';
+import { computeDockingAnchor, findBlockingObstacle, nudgeMiddleSegment, resolveDockingSides, simplifyWaypoints, type DockingSide, type FanConnection } from './connectionRouting';
 
 function isConnection(element: Shape | Connection): element is Connection {
   return Array.isArray((element as Connection).waypoints);
@@ -99,9 +99,9 @@ function layoutManhattanConnection(
     connectionEnd: Boolean(hints.connectionEnd)
   };
 
-  const waypoints = connection.waypoints?.length
+  const waypoints = simplifyWaypoints(connection.waypoints?.length
     ? repairConnection(source, target, start, end, connection.waypoints, layoutHints)
-    : connectRectangles(source, target, start, end, layoutHints);
+    : connectRectangles(source, target, start, end, layoutHints));
 
   if (!elementRegistry) return waypoints;
 
@@ -109,7 +109,7 @@ function layoutManhattanConnection(
   if (!findBlockingObstacle(waypoints, obstacles)) return waypoints;
 
   const nudged = nudgeMiddleSegment(waypoints, obstacles);
-  return nudged && !findBlockingObstacle(nudged, obstacles) ? nudged : waypoints;
+  return nudged && !findBlockingObstacle(nudged, obstacles) ? simplifyWaypoints(nudged) : waypoints;
 }
 
 export default class InfraLayouter extends BaseLayouter {
