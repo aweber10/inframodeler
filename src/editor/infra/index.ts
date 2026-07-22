@@ -2,6 +2,7 @@ import InfraAutoPlace from './InfraAutoPlace';
 import InfraAutoResize from './InfraAutoResize';
 import InfraAutoResizeProvider from './InfraAutoResizeProvider';
 import InfraCommandHandlers from './InfraCommandHandlers';
+import InfraConnectionParentBehavior from './InfraConnectionParentBehavior';
 import InfraContextPad from './InfraContextPad';
 import InfraCopyPasteBehavior from './InfraCopyPasteBehavior';
 import InfraDirectEditing from './InfraDirectEditing';
@@ -23,6 +24,7 @@ export default {
     'infraAutoResizeProvider',
     'infraCommandHandlers',
     'infraCopyPasteBehavior',
+    'infraConnectionParentBehavior',
     'infraFitBehavior',
     'infraResizeBehavior',
     'infraDirectEditing',
@@ -38,6 +40,7 @@ export default {
   infraAutoResizeProvider: ['type', InfraAutoResizeProvider],
   infraCommandHandlers: ['type', InfraCommandHandlers],
   infraCopyPasteBehavior: ['type', InfraCopyPasteBehavior],
+  infraConnectionParentBehavior: ['type', InfraConnectionParentBehavior],
   infraFitBehavior: ['type', InfraFitBehavior],
   infraResizeBehavior: ['type', InfraResizeBehavior],
   infraDirectEditing: ['type', InfraDirectEditing],
