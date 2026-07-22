@@ -180,6 +180,7 @@ fn build_menu(app: &AppHandle) -> tauri::Result<tauri::menu::Menu<tauri::Wry>> {
 
     let view = SubmenuBuilder::new(app, "Darstellung")
         .item(&MenuItemBuilder::with_id("fitViewport", "Diagramm einpassen").build(app)?)
+        .item(&MenuItemBuilder::with_id("rerouteConnections", "Verbindungen neu routen").build(app)?)
         .build()?;
 
     let help = SubmenuBuilder::new(app, "Hilfe")
@@ -209,6 +210,7 @@ fn menu_action(id: &str) -> Option<&'static str> {
         "paste" => Some("paste"),
         "delete" => Some("delete"),
         "fitViewport" => Some("fitViewport"),
+        "rerouteConnections" => Some("rerouteConnections"),
         "exportSvg" => Some("exportSvg"),
         _ => None,
     }

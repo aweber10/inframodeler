@@ -5,6 +5,7 @@ import type { Connection, Shape } from 'diagram-js/lib/model/Types';
 import type { Point } from 'diagram-js/lib/util/Types';
 
 import { computeDockingAnchor, findBlockingObstacle, nudgeMiddleSegment, resolveDockingSides, simplifyWaypoints, type DockingSide, type FanConnection } from './connectionRouting';
+import { routeOrthogonal, type ExistingSegment } from './orthoRouter';
 
 function isConnection(element: Shape | Connection): element is Connection {
   return Array.isArray((element as Connection).waypoints);
@@ -24,7 +25,7 @@ function collectAncestorIds(shape: Shape, ids: Set<string>): void {
 }
 
 /** All shapes that are not part of source's or target's own containment subtree - candidates a routed connection should avoid crossing. */
-function obstaclesFor(elementRegistry: ElementRegistry, source: Shape, target: Shape): Shape[] {
+export function obstaclesFor(elementRegistry: ElementRegistry, source: Shape, target: Shape): Shape[] {
   const excluded = new Set<string>();
   collectSubtreeIds(source, excluded);
   collectSubtreeIds(target, excluded);
@@ -129,5 +130,30 @@ export default class InfraLayouter extends BaseLayouter {
 export function normalizeDocking(connection: Connection, elementRegistry?: ElementRegistry): Point[] {
   const source = connection.source as Shape;
   const target = connection.target as Shape;
+  if (elementRegistry) {
+    const routed = routeConnectionOrthogonal(connection, elementRegistry);
+    if (routed) return routed;
+  }
   return layoutManhattanConnection(connection, source, target, { connectionStart: true, connectionEnd: true }, elementRegistry);
+}
+
+export function routeConnectionOrthogonal(connection: Connection, elementRegistry: ElementRegistry): Point[] | undefined {
+  const source = connection.source as Shape;
+  const target = connection.target as Shape;
+  const sides = resolveDockingSides(source, target);
+  if (!sides.source || !sides.target) return undefined;
+  const sourceAnchor = computeDockingAnchor(source, sides.source, fanConnections(elementRegistry, source, sides.source), connection.id);
+  const targetAnchor = computeDockingAnchor(target, sides.target, fanConnections(elementRegistry, target, sides.target), connection.id);
+  const existingSegments: ExistingSegment[] = [];
+  for (const element of elementRegistry.getAll() as Array<Shape | Connection>) {
+    if (!isConnection(element) || element === connection) continue;
+    for (let index = 0; index < element.waypoints.length - 1; index += 1) {
+      existingSegments.push({ start: element.waypoints[index]!, end: element.waypoints[index + 1]! });
+    }
+  }
+  return routeOrthogonal({
+    source, target, sourceAnchor, targetAnchor,
+    sourceSide: sides.source, targetSide: sides.target,
+    obstacles: obstaclesFor(elementRegistry, source, target), existingSegments
+  });
 }

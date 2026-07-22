@@ -94,6 +94,7 @@ export default class AppController {
         case 'undo': this.commandStack.undo(); break;
         case 'redo': this.commandStack.redo(); break;
         case 'fitViewport': this.canvas.zoom('fit-viewport'); break;
+        case 'rerouteConnections': this.triggerEditorAction('rerouteConnections'); break;
         case 'cut': this.triggerEditorAction('cut'); break;
         case 'copy': this.triggerEditorAction('copy'); break;
         case 'paste': this.triggerEditorAction('paste'); break;

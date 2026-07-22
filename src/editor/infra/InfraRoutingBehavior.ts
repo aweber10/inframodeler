@@ -2,9 +2,12 @@ import CommandInterceptor from 'diagram-js/lib/command/CommandInterceptor';
 import type EventBus from 'diagram-js/lib/core/EventBus';
 import type ElementRegistry from 'diagram-js/lib/core/ElementRegistry';
 import type Modeling from 'diagram-js/lib/features/modeling/Modeling';
+import type EditorActions from 'diagram-js/lib/features/editor-actions/EditorActions';
+import type Selection from 'diagram-js/lib/features/selection/Selection';
 import type { Connection, Element } from 'diagram-js/lib/model/Types';
 
 import { separateParallelSegments } from './connectionRouting';
+import { routeConnectionOrthogonal } from './InfraLayouter';
 
 interface UpdateWaypointsContext {
   hints?: { parallelSeparation?: boolean };
@@ -13,15 +16,37 @@ interface UpdateWaypointsContext {
 const MODEL_CHANGES = ['connection.create', 'connection.layout', 'shape.move', 'elements.move', 'shape.resize'];
 
 export default class InfraRoutingBehavior extends CommandInterceptor {
-  static override $inject = ['eventBus', 'elementRegistry', 'modeling'];
+  static override $inject = ['eventBus', 'elementRegistry', 'modeling', 'editorActions', 'selection'];
 
-  constructor(eventBus: EventBus, private readonly elementRegistry: ElementRegistry, private readonly modeling: Modeling) {
+  constructor(
+    eventBus: EventBus,
+    private readonly elementRegistry: ElementRegistry,
+    private readonly modeling: Modeling,
+    editorActions: EditorActions,
+    selection: Selection
+  ) {
     super(eventBus);
 
+    this.postExecute('connection.create', ({ context }: { context: { connection: Connection } }) => {
+      this.reroute([context.connection]);
+    });
     this.postExecuted(MODEL_CHANGES, () => this.separateConnections());
     this.postExecuted('connection.updateWaypoints', ({ context }: { context: UpdateWaypointsContext }) => {
       if (!context.hints?.parallelSeparation) this.separateConnections();
     });
+    editorActions.register({ rerouteConnections: () => {
+      const selected = selection.get().filter(isConnection);
+      this.reroute(selected.length ? selected : (this.elementRegistry.getAll() as Element[]).filter(isConnection));
+    } });
+  }
+
+  private reroute(connections: readonly Connection[]): void {
+    for (const connection of connections) {
+      const waypoints = routeConnectionOrthogonal(connection, this.elementRegistry);
+      if (waypoints && !sameWaypoints(connection.waypoints, waypoints)) {
+        this.modeling.updateWaypoints(connection, waypoints, { automaticRouting: true });
+      }
+    }
   }
 
   private separateConnections(): void {

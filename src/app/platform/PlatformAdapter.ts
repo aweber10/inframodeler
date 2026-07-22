@@ -11,6 +11,7 @@ export type AppAction =
   | 'paste'
   | 'delete'
   | 'fitViewport'
+  | 'rerouteConnections'
   | 'exportSvg';
 
 export interface PlatformAdapter {
