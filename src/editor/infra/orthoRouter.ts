@@ -1,4 +1,4 @@
-import { segmentIntersectsRect, simplifyWaypoints, type DockingSide, type Point, type Rect } from './connectionRouting';
+import { simplifyWaypoints, type DockingSide, type Point, type Rect } from './connectionRouting';
 
 export interface ExistingSegment {
   start: Point;
@@ -51,13 +51,15 @@ export function routeOrthogonal(options: RouteOrthogonalOptions): Point[] | unde
   const startKey = stateKey(start);
   const states = new Map([[startKey, start]]);
   const bestCost = new Map([[startKey, 0]]);
-  const open = new Set([startKey]);
+  const open = new StateQueue();
+  open.push(startKey, start);
   let endKey: string | undefined;
 
   while (open.size) {
-    const currentKey = [...open].reduce((best, key) => compareStates(states.get(key)!, states.get(best)!) < 0 ? key : best);
-    open.delete(currentKey);
-    const current = states.get(currentKey)!;
+    const entry = open.pop()!;
+    const currentKey = entry.key;
+    const current = entry.state;
+    if (current.cost !== bestCost.get(currentKey)) continue;
     const currentPoint = gridPoint(current, xCoordinates, yCoordinates);
 
     if (current.xIndex === targetIndex.xIndex && current.yIndex === targetIndex.yIndex) {
@@ -87,7 +89,7 @@ export function routeOrthogonal(options: RouteOrthogonalOptions): Point[] | unde
       if (cost >= (bestCost.get(key) ?? Number.POSITIVE_INFINITY)) continue;
       bestCost.set(key, cost);
       states.set(key, state);
-      open.add(key);
+      open.push(key, state);
     }
   }
 
@@ -113,6 +115,8 @@ function coordinates(options: RouteOrthogonalOptions, axis: 'x' | 'y', bounds: R
   for (const obstacle of [options.source, options.target, ...options.obstacles]) {
     values.add(obstacle[axis] - MARGIN);
     values.add(obstacle[axis] + obstacle[size] + MARGIN);
+    values.add(obstacle[axis] - OBSTACLE_PADDING);
+    values.add(obstacle[axis] + obstacle[size] + OBSTACLE_PADDING);
   }
   return [...values].sort((a, b) => a - b);
 }
@@ -153,6 +157,45 @@ function compareStates(a: State, b: State): number {
   return a.estimate - b.estimate || a.cost - b.cost || a.yIndex - b.yIndex || a.xIndex - b.xIndex || String(a.direction).localeCompare(String(b.direction));
 }
 
+class StateQueue {
+  private readonly entries: Array<{ key: string; state: State }> = [];
+
+  get size(): number {
+    return this.entries.length;
+  }
+
+  push(key: string, state: State): void {
+    this.entries.push({ key, state });
+    let index = this.entries.length - 1;
+    while (index > 0) {
+      const parent = Math.floor((index - 1) / 2);
+      if (compareStates(this.entries[parent]!.state, state) <= 0) break;
+      this.entries[index] = this.entries[parent]!;
+      index = parent;
+    }
+    this.entries[index] = { key, state };
+  }
+
+  pop(): { key: string; state: State } | undefined {
+    const first = this.entries[0];
+    const last = this.entries.pop();
+    if (!first || !last || !this.entries.length) return first;
+    let index = 0;
+    while (true) {
+      const left = index * 2 + 1;
+      if (left >= this.entries.length) break;
+      const right = left + 1;
+      const child = right < this.entries.length
+        && compareStates(this.entries[right]!.state, this.entries[left]!.state) < 0 ? right : left;
+      if (compareStates(last.state, this.entries[child]!.state) <= 0) break;
+      this.entries[index] = this.entries[child]!;
+      index = child;
+    }
+    this.entries[index] = last;
+    return first;
+  }
+}
+
 function expandRect(rect: Rect, padding: number): Rect {
   return { x: rect.x - padding, y: rect.y - padding, width: rect.width + 2 * padding, height: rect.height + 2 * padding };
 }
@@ -163,7 +206,17 @@ function pointBlocked(point: Point, obstacles: readonly Rect[], sourceAnchor: Po
 }
 
 function segmentBlocked(a: Point, b: Point, obstacles: readonly Rect[]): boolean {
-  return obstacles.some((rect) => segmentIntersectsRect(a, b, rect));
+  return obstacles.some((rect) => {
+    if (a.x === b.x) {
+      return a.x > rect.x && a.x < rect.x + rect.width
+        && Math.max(Math.min(a.y, b.y), rect.y) < Math.min(Math.max(a.y, b.y), rect.y + rect.height);
+    }
+    if (a.y === b.y) {
+      return a.y > rect.y && a.y < rect.y + rect.height
+        && Math.max(Math.min(a.x, b.x), rect.x) < Math.min(Math.max(a.x, b.x), rect.x + rect.width);
+    }
+    return true;
+  });
 }
 
 function movesOutward(a: Point, b: Point, side: DockingSide): boolean {

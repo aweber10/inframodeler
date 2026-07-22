@@ -188,6 +188,18 @@ function canContain(parent, child) {
 
 Gewinn gegenüber dem POC: Die Regel wirkt schon *während* des Ziehens (rote/grüne Drop-Markierung), nicht erst beim Loslassen – genau das Camunda-Gefühl, das der POC nur andeutet.
 
+### 3.2.1 Routing-Pipeline
+
+`InfraLayouter` bleibt der diagram-js-Adapter auf Basis von `BaseLayouter`; die Geometrie liegt in den pure, headless testbaren Modulen `connectionRouting.ts` und `orthoRouter.ts`.
+
+Die schnelle Editierpipeline verwendet `repairConnection`, vereinfacht danach doppelte, kollineare und sehr kurze Treppenpunkte und weicht blockierten inneren Segmenten höchstens zehnmal aus. Andock-Segmente bleiben unverändert. Nach abgeschlossenen Modelländerungen werden deckungsgleiche innere Parallelsegmente gebündelt aufgefächert. Diese Schritte verwenden kein A* und halten dadurch Move und Drag auch bei großen Modellen reaktiv.
+
+Der orthogonale A*-Router durchsucht ein Hanan-Gitter aus Hindernisrändern, Ankern und Diagrammgrenzen. Seine Kosten berücksichtigen Weglänge, Knicke und kollineare Überlappungen. Er läuft ausschließlich nach `connection.create`, beim expliziten Import-Routing und über „Verbindungen neu routen“. Findet A* keinen Weg, fällt der Adapter auf die schnelle Pipeline zurück.
+
+Manuell verschobene Bendpoints markieren eine Verbindung als `pinnedRouting`. Gepinnte Verbindungen werden weder automatisch neu geroutet noch genudged oder parallel getrennt; Endpunktbewegungen reparieren nur die bestehende Route. Nur eine explizit ausgewählte Verbindung wird durch „Verbindungen neu routen“ entpinnt. Kantenlabels sind verschiebbare diagram-js-Label-Elemente, starten auf dem längsten Segment und speichern ihre manuelle Position im Dateiformat.
+
+**Profiling-Grenze:** Der Interaktionspfad ruft `routeOrthogonal` nicht auf. Bei 300 Elementen bleiben während Move/Drag ausschließlich `repairConnection`, Vereinfachung und die begrenzte Heuristik aktiv; die potenziell teure Gittersuche beginnt erst nach den oben genannten expliziten Aktionen.
+
 ### 3.3 Context Pad: `PADCFG` → ContextPadProvider
 
 Die POC-Datenstruktur bleibt wörtlich bestehen; nur die Auswertung zieht um. Ein Eintrag pro Aktion, das Framework übernimmt Positionierung, Rendering und Öffnen/Schließen:

@@ -1,0 +1,1325 @@
+{
+  "format": "inframodeler",
+  "formatVersion": 1,
+  "title": "Übersicht SAM - Prod / Kontext und Schnittstellen",
+  "elements": [
+    {
+      "id": "actor_1",
+      "type": "actor",
+      "name": "User",
+      "parent": "zone_1",
+      "x": 98,
+      "y": 100,
+      "w": 64,
+      "h": 82
+    },
+    {
+      "id": "actor_2",
+      "type": "actor",
+      "name": "Customer",
+      "parent": "zone_2",
+      "x": 764,
+      "y": 100,
+      "w": 64,
+      "h": 82
+    },
+    {
+      "id": "db_1",
+      "type": "db",
+      "name": "SAMP",
+      "parent": "server_4",
+      "x": 114,
+      "y": 680,
+      "w": 132,
+      "h": 88
+    },
+    {
+      "id": "esb_1",
+      "type": "esb",
+      "name": "RVS",
+      "x": 338.66666666666663,
+      "y": 1308,
+      "w": 240,
+      "h": 56
+    },
+    {
+      "id": "esb_2",
+      "type": "esb",
+      "name": "Connect:Direct",
+      "x": 602.2222222222223,
+      "y": 1420,
+      "w": 240,
+      "h": 56
+    },
+    {
+      "id": "esb_3",
+      "type": "esb",
+      "name": "DataPower (DE)",
+      "x": 894.0000000000001,
+      "y": 1420,
+      "w": 240,
+      "h": 56
+    },
+    {
+      "id": "esb_4",
+      "type": "esb",
+      "name": "DataPower VW",
+      "x": 701.3333333333334,
+      "y": 826,
+      "w": 240,
+      "h": 56
+    },
+    {
+      "id": "esb_5",
+      "type": "esb",
+      "name": "RW.IL",
+      "x": 666,
+      "y": 572,
+      "w": 240,
+      "h": 56
+    },
+    {
+      "id": "extsys_1",
+      "type": "extsys",
+      "name": "4Sales Schadenmeldung",
+      "parent": "zone_2",
+      "x": 876,
+      "y": 100,
+      "w": 176,
+      "h": 66
+    },
+    {
+      "id": "module_1",
+      "type": "module",
+      "name": "Web-Browser",
+      "parent": "server_1",
+      "x": 226,
+      "y": 136,
+      "w": 156,
+      "h": 46
+    },
+    {
+      "id": "module_2",
+      "type": "module",
+      "name": "Reverse-Proxy",
+      "parent": "server_2",
+      "x": 114,
+      "y": 314,
+      "w": 156,
+      "h": 46
+    },
+    {
+      "id": "module_3",
+      "type": "module",
+      "name": "rvsEvo (Station KAZ)",
+      "parent": "server_3",
+      "x": 392,
+      "y": 314,
+      "w": 156,
+      "h": 46
+    },
+    {
+      "id": "module_4",
+      "type": "module",
+      "name": "SAM Web",
+      "parent": "syssoft_1",
+      "x": 406,
+      "y": 404,
+      "w": 156,
+      "h": 46
+    },
+    {
+      "id": "module_5",
+      "type": "module",
+      "name": "SAM REST",
+      "parent": "syssoft_1",
+      "x": 406,
+      "y": 462,
+      "w": 156,
+      "h": 46
+    },
+    {
+      "id": "module_6",
+      "type": "module",
+      "name": "SAM Reporting",
+      "parent": "syssoft_1",
+      "x": 406,
+      "y": 520,
+      "w": 156,
+      "h": 46
+    },
+    {
+      "id": "note_1",
+      "type": "note",
+      "name": "BS/WOB\nZugriffe über das VW-Intranet",
+      "parent": "zone_1",
+      "x": 197,
+      "y": 4,
+      "w": 190,
+      "h": 56
+    },
+    {
+      "id": "note_2",
+      "type": "note",
+      "name": "Authentifizierung per PKI",
+      "parent": "zone_1",
+      "x": 648,
+      "y": 278,
+      "w": 190,
+      "h": 56
+    },
+    {
+      "id": "note_3",
+      "type": "note",
+      "name": "Schnittstellen sind geplant bzw. in Entwicklung",
+      "parent": "zone_3",
+      "x": -132,
+      "y": 1074,
+      "w": 190,
+      "h": 56
+    },
+    {
+      "id": "server_1",
+      "type": "server",
+      "name": "Client",
+      "parent": "zone_1",
+      "x": 210,
+      "y": 100,
+      "w": 230,
+      "h": 130
+    },
+    {
+      "id": "server_2",
+      "type": "server",
+      "name": "sam.vw.vwg",
+      "parent": "zone_1",
+      "x": 98,
+      "y": 278,
+      "w": 230,
+      "h": 130
+    },
+    {
+      "id": "server_3",
+      "type": "server",
+      "name": "lxf202p1077.wob.vw.vwg",
+      "parent": "zone_1",
+      "x": 376,
+      "y": 278,
+      "w": 232,
+      "h": 318
+    },
+    {
+      "id": "server_4",
+      "type": "server",
+      "name": "exa118r05s09.b2x.vwg",
+      "parent": "zone_1",
+      "x": 98,
+      "y": 644,
+      "w": 230,
+      "h": 140
+    },
+    {
+      "id": "syssoft_1",
+      "type": "syssoft",
+      "name": "Websphere Liberty Profile",
+      "parent": "server_3",
+      "x": 392,
+      "y": 372,
+      "w": 200,
+      "h": 208
+    },
+    {
+      "id": "umsystem_1",
+      "type": "umsystem",
+      "name": "WandaGF",
+      "parent": "zone_3",
+      "x": 98,
+      "y": 962,
+      "w": 176,
+      "h": 64
+    },
+    {
+      "id": "umsystem_10",
+      "type": "umsystem",
+      "name": "uEKA",
+      "parent": "zone_4",
+      "x": 878,
+      "y": 1074,
+      "w": 176,
+      "h": 64
+    },
+    {
+      "id": "umsystem_11",
+      "type": "umsystem",
+      "name": "zVertrag",
+      "parent": "zone_4",
+      "x": 654,
+      "y": 1186,
+      "w": 176,
+      "h": 64
+    },
+    {
+      "id": "umsystem_12",
+      "type": "umsystem",
+      "name": "Service Factory",
+      "parent": "zone_4",
+      "x": 878,
+      "y": 1186,
+      "w": 176,
+      "h": 64
+    },
+    {
+      "id": "umsystem_13",
+      "type": "umsystem",
+      "name": "iSport",
+      "parent": "zone_4",
+      "x": 654,
+      "y": 1298,
+      "w": 176,
+      "h": 64
+    },
+    {
+      "id": "umsystem_2",
+      "type": "umsystem",
+      "name": "PROFIS",
+      "parent": "zone_3",
+      "x": 322,
+      "y": 962,
+      "w": 176,
+      "h": 64
+    },
+    {
+      "id": "umsystem_3",
+      "type": "umsystem",
+      "name": "GFT",
+      "parent": "zone_3",
+      "x": 98,
+      "y": 1074,
+      "w": 176,
+      "h": 64
+    },
+    {
+      "id": "umsystem_4",
+      "type": "umsystem",
+      "name": "SAP-IPS HR-VW",
+      "parent": "zone_3",
+      "x": 322,
+      "y": 1074,
+      "w": 176,
+      "h": 64
+    },
+    {
+      "id": "umsystem_5",
+      "type": "umsystem",
+      "name": "UMS",
+      "parent": "zone_3",
+      "x": 98,
+      "y": 1186,
+      "w": 176,
+      "h": 64
+    },
+    {
+      "id": "umsystem_6",
+      "type": "umsystem",
+      "name": "Kundencenter",
+      "parent": "zone_3",
+      "x": 322,
+      "y": 1186,
+      "w": 176,
+      "h": 64
+    },
+    {
+      "id": "umsystem_7",
+      "type": "umsystem",
+      "name": "DS MG / DS Prot",
+      "parent": "zone_4",
+      "x": 654,
+      "y": 962,
+      "w": 176,
+      "h": 64
+    },
+    {
+      "id": "umsystem_8",
+      "type": "umsystem",
+      "name": "Aditus IIQ",
+      "parent": "zone_4",
+      "x": 878,
+      "y": 962,
+      "w": 176,
+      "h": 64
+    },
+    {
+      "id": "umsystem_9",
+      "type": "umsystem",
+      "name": "WA-Leasing",
+      "parent": "zone_4",
+      "x": 654,
+      "y": 1074,
+      "w": 176,
+      "h": 64
+    },
+    {
+      "id": "zone_1",
+      "type": "zone",
+      "name": "Schadenmanagementsystem SAM",
+      "x": 80,
+      "y": 60,
+      "w": 546,
+      "h": 742
+    },
+    {
+      "id": "zone_2",
+      "type": "zone",
+      "name": "Internet",
+      "x": 746,
+      "y": 60,
+      "w": 324,
+      "h": 170
+    },
+    {
+      "id": "zone_3",
+      "type": "zone",
+      "name": "Systeme des VW-Konzerns",
+      "x": 80,
+      "y": 922,
+      "w": 436,
+      "h": 346
+    },
+    {
+      "id": "zone_4",
+      "type": "zone",
+      "name": "Systeme der FSAG",
+      "x": 636,
+      "y": 922,
+      "w": 436,
+      "h": 458
+    }
+  ],
+  "connections": [
+    {
+      "id": "connection_1",
+      "source": "actor_1",
+      "target": "module_1",
+      "kind": "communication",
+      "label": "",
+      "waypoints": [
+        {
+          "x": 162,
+          "y": 141
+        },
+        {
+          "x": 194,
+          "y": 141
+        },
+        {
+          "x": 194,
+          "y": 159
+        },
+        {
+          "x": 226,
+          "y": 159
+        }
+      ]
+    },
+    {
+      "id": "connection_10",
+      "source": "module_5",
+      "target": "umsystem_6",
+      "kind": "communication",
+      "label": "mail",
+      "waypoints": [
+        {
+          "x": 484,
+          "y": 508
+        },
+        {
+          "x": 484,
+          "y": 847
+        },
+        {
+          "x": 410,
+          "y": 847
+        },
+        {
+          "x": 410,
+          "y": 1186
+        }
+      ]
+    },
+    {
+      "id": "connection_11",
+      "source": "module_5",
+      "target": "esb_4",
+      "kind": "communication",
+      "label": "SOAP",
+      "waypoints": [
+        {
+          "x": 574,
+          "y": 508
+        },
+        {
+          "x": 574,
+          "y": 667
+        },
+        {
+          "x": 821.3333333333334,
+          "y": 667
+        },
+        {
+          "x": 821.3333333333334,
+          "y": 826
+        }
+      ]
+    },
+    {
+      "id": "connection_12",
+      "source": "esb_4",
+      "target": "module_5",
+      "kind": "communication",
+      "label": "SOAP",
+      "waypoints": [
+        {
+          "x": 858,
+          "y": 826
+        },
+        {
+          "x": 858,
+          "y": 667
+        },
+        {
+          "x": 574,
+          "y": 667
+        },
+        {
+          "x": 574,
+          "y": 508
+        }
+      ]
+    },
+    {
+      "id": "connection_13",
+      "source": "extsys_1",
+      "target": "esb_5",
+      "kind": "communication",
+      "label": "REST",
+      "waypoints": [
+        {
+          "x": 964,
+          "y": 166
+        },
+        {
+          "x": 964,
+          "y": 369
+        },
+        {
+          "x": 786,
+          "y": 369
+        },
+        {
+          "x": 786,
+          "y": 572
+        }
+      ]
+    },
+    {
+      "id": "connection_14",
+      "source": "esb_5",
+      "target": "module_2",
+      "kind": "communication",
+      "label": "",
+      "waypoints": [
+        {
+          "x": 666,
+          "y": 600
+        },
+        {
+          "x": 364,
+          "y": 600
+        },
+        {
+          "x": 364,
+          "y": 341.3333333333333
+        },
+        {
+          "x": 270,
+          "y": 341.3333333333333
+        }
+      ]
+    },
+    {
+      "id": "connection_15",
+      "source": "umsystem_13",
+      "target": "esb_5",
+      "kind": "communication",
+      "label": "",
+      "waypoints": [
+        {
+          "x": 742,
+          "y": 1298
+        },
+        {
+          "x": 742,
+          "y": 963
+        },
+        {
+          "x": 786,
+          "y": 963
+        },
+        {
+          "x": 786,
+          "y": 628
+        }
+      ]
+    },
+    {
+      "id": "connection_16",
+      "source": "esb_5",
+      "target": "umsystem_13",
+      "kind": "communication",
+      "label": "",
+      "waypoints": [
+        {
+          "x": 822.6666666666666,
+          "y": 628
+        },
+        {
+          "x": 822.6666666666666,
+          "y": 963
+        },
+        {
+          "x": 768,
+          "y": 963
+        },
+        {
+          "x": 768,
+          "y": 1298
+        }
+      ]
+    },
+    {
+      "id": "connection_17",
+      "source": "module_3",
+      "target": "esb_1",
+      "kind": "communication",
+      "label": "",
+      "waypoints": [
+        {
+          "x": 504,
+          "y": 360
+        },
+        {
+          "x": 504,
+          "y": 834
+        },
+        {
+          "x": 458.66666666666663,
+          "y": 834
+        },
+        {
+          "x": 458.66666666666663,
+          "y": 1308
+        }
+      ]
+    },
+    {
+      "id": "connection_18",
+      "source": "esb_1",
+      "target": "module_3",
+      "kind": "communication",
+      "label": "",
+      "waypoints": [
+        {
+          "x": 495.33333333333326,
+          "y": 1308
+        },
+        {
+          "x": 495.33333333333326,
+          "y": 834
+        },
+        {
+          "x": 510.8,
+          "y": 834
+        },
+        {
+          "x": 510.8,
+          "y": 360
+        }
+      ]
+    },
+    {
+      "id": "connection_19",
+      "source": "esb_1",
+      "target": "umsystem_9",
+      "kind": "communication",
+      "label": "",
+      "waypoints": [
+        {
+          "x": 578.6666666666666,
+          "y": 1336
+        },
+        {
+          "x": 616,
+          "y": 1336
+        },
+        {
+          "x": 616,
+          "y": 1106
+        },
+        {
+          "x": 654,
+          "y": 1106
+        }
+      ]
+    },
+    {
+      "id": "connection_2",
+      "source": "db_1",
+      "target": "module_3",
+      "kind": "communication",
+      "label": "",
+      "waypoints": [
+        {
+          "x": 180,
+          "y": 680
+        },
+        {
+          "x": 180,
+          "y": 520
+        },
+        {
+          "x": 470,
+          "y": 520
+        },
+        {
+          "x": 470,
+          "y": 360
+        }
+      ]
+    },
+    {
+      "id": "connection_20",
+      "source": "esb_1",
+      "target": "umsystem_1",
+      "kind": "communication",
+      "label": "",
+      "waypoints": [
+        {
+          "x": 403.66666666666663,
+          "y": 1308
+        },
+        {
+          "x": 403.66666666666663,
+          "y": 1167
+        },
+        {
+          "x": 186,
+          "y": 1167
+        },
+        {
+          "x": 186,
+          "y": 1026
+        }
+      ]
+    },
+    {
+      "id": "connection_21",
+      "source": "umsystem_1",
+      "target": "esb_1",
+      "kind": "communication",
+      "label": "",
+      "waypoints": [
+        {
+          "x": 212,
+          "y": 1026
+        },
+        {
+          "x": 212,
+          "y": 1167
+        },
+        {
+          "x": 436.66666666666663,
+          "y": 1167
+        },
+        {
+          "x": 436.66666666666663,
+          "y": 1308
+        }
+      ]
+    },
+    {
+      "id": "connection_22",
+      "source": "esb_1",
+      "target": "umsystem_2",
+      "kind": "communication",
+      "label": "",
+      "waypoints": [
+        {
+          "x": 458.66666666666663,
+          "y": 1308
+        },
+        {
+          "x": 458.66666666666663,
+          "y": 1167
+        },
+        {
+          "x": 410,
+          "y": 1167
+        },
+        {
+          "x": 410,
+          "y": 1026
+        }
+      ]
+    },
+    {
+      "id": "connection_23",
+      "source": "umsystem_2",
+      "target": "esb_1",
+      "kind": "communication",
+      "label": "",
+      "waypoints": [
+        {
+          "x": 436,
+          "y": 1026
+        },
+        {
+          "x": 436,
+          "y": 1167
+        },
+        {
+          "x": 474.38095238095235,
+          "y": 1167
+        },
+        {
+          "x": 474.38095238095235,
+          "y": 1308
+        }
+      ]
+    },
+    {
+      "id": "connection_24",
+      "source": "esb_1",
+      "target": "umsystem_3",
+      "kind": "communication",
+      "label": "",
+      "waypoints": [
+        {
+          "x": 338.66666666666663,
+          "y": 1336
+        },
+        {
+          "x": 306,
+          "y": 1336
+        },
+        {
+          "x": 306,
+          "y": 1106
+        },
+        {
+          "x": 274,
+          "y": 1106
+        }
+      ]
+    },
+    {
+      "id": "connection_25",
+      "source": "esb_1",
+      "target": "esb_2",
+      "kind": "communication",
+      "label": "",
+      "waypoints": [
+        {
+          "x": 578.6666666666666,
+          "y": 1342
+        },
+        {
+          "x": 590,
+          "y": 1342
+        },
+        {
+          "x": 590,
+          "y": 1448
+        },
+        {
+          "x": 602.2222222222223,
+          "y": 1448
+        }
+      ]
+    },
+    {
+      "id": "connection_26",
+      "source": "esb_2",
+      "target": "umsystem_8",
+      "kind": "communication",
+      "label": "",
+      "waypoints": [
+        {
+          "x": 722.2222222222223,
+          "y": 1420
+        },
+        {
+          "x": 722.2222222222223,
+          "y": 1223
+        },
+        {
+          "x": 966,
+          "y": 1223
+        },
+        {
+          "x": 966,
+          "y": 1026
+        }
+      ]
+    },
+    {
+      "id": "connection_27",
+      "source": "esb_2",
+      "target": "umsystem_7",
+      "kind": "communication",
+      "label": "",
+      "waypoints": [
+        {
+          "x": 685.5555555555557,
+          "y": 1420
+        },
+        {
+          "x": 685.5555555555557,
+          "y": 1223
+        },
+        {
+          "x": 742,
+          "y": 1223
+        },
+        {
+          "x": 742,
+          "y": 1026
+        }
+      ]
+    },
+    {
+      "id": "connection_28",
+      "source": "umsystem_7",
+      "target": "esb_2",
+      "kind": "communication",
+      "label": "",
+      "waypoints": [
+        {
+          "x": 768,
+          "y": 1026
+        },
+        {
+          "x": 768,
+          "y": 1223
+        },
+        {
+          "x": 722.2222222222223,
+          "y": 1223
+        },
+        {
+          "x": 722.2222222222223,
+          "y": 1420
+        }
+      ]
+    },
+    {
+      "id": "connection_29",
+      "source": "esb_4",
+      "target": "esb_3",
+      "kind": "communication",
+      "label": "SOAP",
+      "waypoints": [
+        {
+          "x": 821.3333333333334,
+          "y": 882
+        },
+        {
+          "x": 821.3333333333334,
+          "y": 1151
+        },
+        {
+          "x": 1014.0000000000001,
+          "y": 1151
+        },
+        {
+          "x": 1014.0000000000001,
+          "y": 1420
+        }
+      ]
+    },
+    {
+      "id": "connection_3",
+      "source": "module_3",
+      "target": "db_1",
+      "kind": "communication",
+      "label": "",
+      "waypoints": [
+        {
+          "x": 492.6666666666667,
+          "y": 360
+        },
+        {
+          "x": 492.6666666666667,
+          "y": 520
+        },
+        {
+          "x": 198.66666666666669,
+          "y": 520
+        },
+        {
+          "x": 198.66666666666669,
+          "y": 680
+        }
+      ]
+    },
+    {
+      "id": "connection_30",
+      "source": "esb_3",
+      "target": "esb_4",
+      "kind": "communication",
+      "label": "SOAP",
+      "waypoints": [
+        {
+          "x": 1050.6666666666667,
+          "y": 1420
+        },
+        {
+          "x": 1050.6666666666667,
+          "y": 1151
+        },
+        {
+          "x": 858,
+          "y": 1151
+        },
+        {
+          "x": 858,
+          "y": 882
+        }
+      ]
+    },
+    {
+      "id": "connection_31",
+      "source": "esb_3",
+      "target": "umsystem_10",
+      "kind": "communication",
+      "label": "SOAP",
+      "waypoints": [
+        {
+          "x": 1069,
+          "y": 1420
+        },
+        {
+          "x": 1069,
+          "y": 1279
+        },
+        {
+          "x": 866,
+          "y": 1279
+        },
+        {
+          "x": 866,
+          "y": 1138
+        }
+      ]
+    },
+    {
+      "id": "connection_32",
+      "source": "esb_3",
+      "target": "umsystem_11",
+      "kind": "communication",
+      "label": "SOAP",
+      "waypoints": [
+        {
+          "x": 894.0000000000001,
+          "y": 1448
+        },
+        {
+          "x": 862,
+          "y": 1448
+        },
+        {
+          "x": 862,
+          "y": 1218
+        },
+        {
+          "x": 830,
+          "y": 1218
+        }
+      ]
+    },
+    {
+      "id": "connection_33",
+      "source": "umsystem_11",
+      "target": "esb_3",
+      "kind": "communication",
+      "label": "SOAP",
+      "waypoints": [
+        {
+          "x": 830,
+          "y": 1225.3333333333333
+        },
+        {
+          "x": 862,
+          "y": 1225.3333333333333
+        },
+        {
+          "x": 862,
+          "y": 1454
+        },
+        {
+          "x": 894.0000000000001,
+          "y": 1454
+        }
+      ]
+    },
+    {
+      "id": "connection_34",
+      "source": "esb_4",
+      "target": "umsystem_12",
+      "kind": "communication",
+      "label": "",
+      "waypoints": [
+        {
+          "x": 766.3333333333334,
+          "y": 882
+        },
+        {
+          "x": 766.3333333333334,
+          "y": 1034
+        },
+        {
+          "x": 966,
+          "y": 1034
+        },
+        {
+          "x": 966,
+          "y": 1186
+        }
+      ]
+    },
+    {
+      "id": "connection_35",
+      "source": "note_1",
+      "target": "actor_1",
+      "kind": "noteAttachment",
+      "label": "",
+      "waypoints": [
+        {
+          "x": 197,
+          "y": 32
+        },
+        {
+          "x": 180,
+          "y": 32
+        },
+        {
+          "x": 180,
+          "y": 130.66666666666666
+        },
+        {
+          "x": 162,
+          "y": 130.66666666666666
+        }
+      ]
+    },
+    {
+      "id": "connection_36",
+      "source": "note_2",
+      "target": "server_2",
+      "kind": "noteAttachment",
+      "label": "",
+      "waypoints": [
+        {
+          "x": 648,
+          "y": 306
+        },
+        {
+          "x": 488,
+          "y": 306
+        },
+        {
+          "x": 488,
+          "y": 343
+        },
+        {
+          "x": 328,
+          "y": 343
+        }
+      ]
+    },
+    {
+      "id": "connection_37",
+      "source": "note_3",
+      "target": "umsystem_3",
+      "kind": "noteAttachment",
+      "label": "",
+      "waypoints": [
+        {
+          "x": 58,
+          "y": 1102
+        },
+        {
+          "x": 78,
+          "y": 1102
+        },
+        {
+          "x": 78,
+          "y": 1106
+        },
+        {
+          "x": 98,
+          "y": 1106
+        }
+      ]
+    },
+    {
+      "id": "connection_4",
+      "source": "actor_2",
+      "target": "extsys_1",
+      "kind": "communication",
+      "label": "HTTPS",
+      "waypoints": [
+        {
+          "x": 828,
+          "y": 141
+        },
+        {
+          "x": 852,
+          "y": 141
+        },
+        {
+          "x": 852,
+          "y": 133
+        },
+        {
+          "x": 876,
+          "y": 133
+        }
+      ]
+    },
+    {
+      "id": "connection_5",
+      "source": "module_1",
+      "target": "module_2",
+      "kind": "communication",
+      "label": "HTTPS",
+      "waypoints": [
+        {
+          "x": 304,
+          "y": 182
+        },
+        {
+          "x": 304,
+          "y": 248
+        },
+        {
+          "x": 192,
+          "y": 248
+        },
+        {
+          "x": 192,
+          "y": 314
+        }
+      ]
+    },
+    {
+      "id": "connection_6",
+      "source": "module_2",
+      "target": "syssoft_1",
+      "kind": "communication",
+      "label": "HTTPS",
+      "waypoints": [
+        {
+          "x": 270,
+          "y": 337
+        },
+        {
+          "x": 331,
+          "y": 337
+        },
+        {
+          "x": 331,
+          "y": 476
+        },
+        {
+          "x": 392,
+          "y": 476
+        }
+      ]
+    },
+    {
+      "id": "connection_7",
+      "source": "module_4",
+      "target": "db_1",
+      "kind": "communication",
+      "label": "JDBC",
+      "waypoints": [
+        {
+          "x": 406,
+          "y": 427
+        },
+        {
+          "x": 326,
+          "y": 427
+        },
+        {
+          "x": 326,
+          "y": 724
+        },
+        {
+          "x": 246,
+          "y": 724
+        }
+      ]
+    },
+    {
+      "id": "connection_8",
+      "source": "module_4",
+      "target": "umsystem_4",
+      "kind": "communication",
+      "label": "RFC",
+      "waypoints": [
+        {
+          "x": 484,
+          "y": 450
+        },
+        {
+          "x": 484,
+          "y": 762
+        },
+        {
+          "x": 410,
+          "y": 762
+        },
+        {
+          "x": 410,
+          "y": 1074
+        }
+      ]
+    },
+    {
+      "id": "connection_9",
+      "source": "module_4",
+      "target": "umsystem_5",
+      "kind": "communication",
+      "label": "AIS-API",
+      "waypoints": [
+        {
+          "x": 461.3333333333333,
+          "y": 450
+        },
+        {
+          "x": 461.3333333333333,
+          "y": 818
+        },
+        {
+          "x": 186,
+          "y": 818
+        },
+        {
+          "x": 186,
+          "y": 1186
+        }
+      ]
+    }
+  ]
+}

@@ -92,7 +92,7 @@ test('creates and edits a JDBC database through the context pad', async ({ page 
 
   const databases = page.locator('.djs-shape').filter({ hasText: 'Datenbank' });
   await expect(databases).toHaveCount(1);
-  await expect(page.locator('.djs-connection').filter({ hasText: 'JDBC' })).toHaveCount(2);
+  await expect(page.locator('.djs-shape').filter({ hasText: 'JDBC' })).toHaveCount(2);
 
   const createdId = await databases.first().getAttribute('data-element-id');
   expect(createdId).toBeTruthy();

@@ -142,8 +142,16 @@ export function routeConnectionOrthogonal(connection: Connection, elementRegistr
   const target = connection.target as Shape;
   const sides = resolveDockingSides(source, target);
   if (!sides.source || !sides.target) return undefined;
-  const sourceAnchor = computeDockingAnchor(source, sides.source, fanConnections(elementRegistry, source, sides.source), connection.id);
-  const targetAnchor = computeDockingAnchor(target, sides.target, fanConnections(elementRegistry, target, sides.target), connection.id);
+  const sourceAnchor = toBoundaryAnchor(
+    computeDockingAnchor(source, sides.source, fanConnections(elementRegistry, source, sides.source), connection.id),
+    source,
+    sides.source
+  );
+  const targetAnchor = toBoundaryAnchor(
+    computeDockingAnchor(target, sides.target, fanConnections(elementRegistry, target, sides.target), connection.id),
+    target,
+    sides.target
+  );
   const existingSegments: ExistingSegment[] = [];
   for (const element of elementRegistry.getAll() as Array<Shape | Connection>) {
     if (!isConnection(element) || element === connection) continue;
@@ -156,4 +164,11 @@ export function routeConnectionOrthogonal(connection: Connection, elementRegistr
     sourceSide: sides.source, targetSide: sides.target,
     obstacles: obstaclesFor(elementRegistry, source, target), existingSegments
   });
+}
+
+function toBoundaryAnchor(anchor: Point, shape: Shape, side: DockingSide): Point {
+  if (side === 'left') return { x: shape.x, y: anchor.y };
+  if (side === 'right') return { x: shape.x + shape.width, y: anchor.y };
+  if (side === 'top') return { x: anchor.x, y: shape.y };
+  return { x: anchor.x, y: shape.y + shape.height };
 }
