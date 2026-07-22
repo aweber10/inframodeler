@@ -104,6 +104,77 @@ test('parents a cross-container connection under the common ancestor, not the so
   expect(groupInfo.afterServerB).toBe(true);
 });
 
+test('reparents a connection when its target is dragged into a container', async ({ page }) => {
+  await page.goto('/');
+
+  // A module sits next to a server (holding a runtime) at root level, connected from an actor.
+  // After dragging the module into the runtime, the connection's common ancestor becomes the
+  // server, so the connection must be re-parented there (painting above the server cube) - not left
+  // behind at root level where the cube would cover the arrowhead reaching into the module.
+  const file = {
+    format: 'inframodeler',
+    formatVersion: 1,
+    title: 'DragIn',
+    elements: [
+      { id: 'server_1', type: 'server', name: 'srv', x: 400, y: 120, w: 320, h: 220 },
+      { id: 'syssoft_1', type: 'syssoft', name: 'Tomcat', x: 430, y: 170, w: 250, h: 140, parent: 'server_1' },
+      { id: 'module_1', type: 'module', name: 'App', x: 120, y: 200, w: 156, h: 46 },
+      { id: 'actor_1', type: 'actor', name: 'User', x: 40, y: 200, w: 64, h: 82 }
+    ],
+    connections: [
+      {
+        id: 'connection_https', source: 'actor_1', target: 'module_1', kind: 'communication', label: 'HTTPS',
+        waypoints: [{ x: 104, y: 223 }, { x: 120, y: 223 }]
+      }
+    ]
+  };
+
+  const chooserPromise = page.waitForEvent('filechooser');
+  await page.locator('[data-app-action="open"]').click();
+  const chooser = await chooserPromise;
+  await chooser.setFiles({ name: 'dragin.imod.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(file)) });
+
+  const moduleShape = page.locator('[data-element-id="module_1"]');
+  await expect(moduleShape).toBeVisible();
+  await moduleShape.locator('.djs-hit').click({ force: true });
+
+  // Drag the module into the runtime shape (overcome the move threshold with an intermediate step).
+  const from = await moduleShape.locator('.djs-hit').boundingBox();
+  const runtime = await page.locator('[data-element-id="syssoft_1"] .djs-hit').first().boundingBox();
+  await page.mouse.move(from!.x + from!.width / 2, from!.y + from!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(from!.x + from!.width / 2 + 20, from!.y + from!.height / 2 + 20, { steps: 5 });
+  await page.mouse.move(runtime!.x + runtime!.width / 2, runtime!.y + runtime!.height / 2, { steps: 15 });
+  await page.mouse.up();
+
+  // The module is now a descendant of the server; so must the connection be.
+  await expect.poll(async () => page.evaluate(() => {
+    const module = document.querySelector<SVGGElement>('.djs-element[data-element-id="module_1"]');
+    const runtime = document.querySelector<SVGGElement>('.djs-element[data-element-id="syssoft_1"]');
+    return Boolean(runtime?.closest('.djs-group')?.contains(module!));
+  })).toBe(true);
+
+  const result = await page.evaluate(() => {
+    const connection = document.querySelector<SVGGElement>('.djs-element[data-element-id="connection_https"]');
+    const server = document.querySelector<SVGGElement>('.djs-element[data-element-id="server_1"]');
+    if (!connection || !server) return { paintsLast: false, reachesIntoServer: false };
+
+    // The connection must paint after the server so its cube cannot cover the arrowhead.
+    const paintsLast = Boolean(server.compareDocumentPosition(connection) & Node.DOCUMENT_POSITION_FOLLOWING);
+
+    // And it must be the last among its siblings (guaranteed by the reparent-to-front behaviour),
+    // so a later containment refresh cannot push a sibling container on top of it.
+    const connectionGroup = connection.closest('.djs-group')!;
+    const siblings = connectionGroup.parentElement!.children;
+    const isLastSibling = siblings[siblings.length - 1] === connectionGroup;
+
+    return { paintsLast, isLastSibling };
+  });
+
+  expect(result.paintsLast).toBe(true);
+  expect(result.isLastSibling).toBe(true);
+});
+
 async function modelBounds(page: Page, id: string) {
   return page.locator(`[data-element-id="${id}"]`).evaluate((element) => {
     const matrix = (element as SVGGElement).transform.baseVal.consolidate()!.matrix;
