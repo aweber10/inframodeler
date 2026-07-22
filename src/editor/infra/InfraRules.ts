@@ -71,7 +71,7 @@ export default class InfraRules extends RuleProvider {
   override init(): void {
     this.addRule('shape.create', ({ target, shape }: CreateContext) => canPlace(target, shape));
     this.addRule('elements.move', ({ target, shapes }: MoveContext) =>
-      shapes.every((shape) => canPlace(target, shape))
+      shapes.every((shape) => shape.labelTarget || canPlace(target, shape))
     );
     this.addRule('connection.create', ({ source, target }: ConnectionContext) =>
       canConnect(source, target)

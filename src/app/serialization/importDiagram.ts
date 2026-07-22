@@ -75,12 +75,14 @@ export function importDiagram(diagram: Diagram, file: DiagramFile, options: Impo
     }, {
       kind: record.kind,
       label: record.label,
+      pinnedRouting: record.pinnedRouting,
+      labelPosition: record.labelPosition,
       extensions: record.extensions,
       waypointExtensions: record.waypoints.map(({ extensions }) => extensions)
     });
     // Native .imod.json files carry the exact stored course and endpoints - keep them verbatim.
     // Only sources with placeholder waypoints (PlantUML import) opt into re-routing.
-    const createdConnection = modeling.connect(source, target, connection);
+    const createdConnection = modeling.connect(source, target, connection, { skipAutomaticRouting: !options.routeConnections });
     if (options.routeConnections) {
       modeling.updateWaypoints(createdConnection, normalizeDocking(createdConnection, elementRegistry));
     }

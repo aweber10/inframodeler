@@ -17,5 +17,12 @@ export function migrateDiagramFile(file: DiagramFile): DiagramFile {
 }
 
 function migrateOneVersion(file: DiagramFile): DiagramFile {
+  if (file.formatVersion === 1) {
+    return {
+      ...file,
+      formatVersion: 2,
+      connections: file.connections.map((connection) => ({ ...connection, pinnedRouting: connection.pinnedRouting ?? false }))
+    };
+  }
   throw new DiagramFileError(`Keine Migration für Formatversion ${file.formatVersion} registriert.`);
 }

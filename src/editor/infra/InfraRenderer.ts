@@ -51,10 +51,19 @@ export default class InfraRenderer extends BaseRenderer {
   }
 
   override canRender(element: Element): boolean {
-    return isInfraType(element.businessObject?.type) || isInfraConnection(element);
+    return isInfraType(element.businessObject?.type) || isInfraConnection(element) || isInfraConnectionLabel(element);
   }
 
   override drawShape(parent: SVGElement, rawShape: Shape): SVGElement {
+    if (isInfraConnectionLabel(rawShape)) {
+      const label = rawShape.businessObject.label ?? '';
+      const rect = svg(parent, 'rect', { width: rawShape.width, height: rawShape.height, rx: 9, fill: '#f7f7f5', stroke: '#d3d6da', 'stroke-width': 1 });
+      svg(parent, 'text', {
+        x: rawShape.width / 2, y: rawShape.height / 2, 'text-anchor': 'middle', 'dominant-baseline': 'central',
+        'font-family': FONT, 'font-size': 10.5, fill: '#3e4c59'
+      }, label);
+      return rect;
+    }
     const shape = rawShape as InfraShape;
     const { width: w, height: h } = shape;
     const { type, name } = shape.businessObject;
@@ -164,9 +173,6 @@ export default class InfraRenderer extends BaseRenderer {
 
     if (!noteAttachment) this.ensureArrowMarker(parent.ownerSVGElement);
 
-    const label = connection.businessObject.label;
-    if (label) this.drawConnectionLabel(parent, visibleWaypoints, label);
-
     return path;
   }
 
@@ -194,12 +200,6 @@ export default class InfraRenderer extends BaseRenderer {
     svg(marker, 'path', { d: 'M0 0 L10 5 L0 10 z', fill: '#52606d' });
   }
 
-  private drawConnectionLabel(parent: SVGElement, waypoints: Connection['waypoints'], label: string): void {
-    const point = getLabelPoint(waypoints);
-    const width = label.length * 6.4 + 12;
-    svg(parent, 'rect', { x: point.x - width / 2, y: point.y - 10, width, height: 18, rx: 9, fill: '#f7f7f5', stroke: '#d3d6da', 'stroke-width': 1 });
-    svg(parent, 'text', { x: point.x, y: point.y, 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-family': FONT, 'font-size': 10.5, fill: '#3e4c59' }, label);
-  }
 }
 
 function connectionPath(waypoints: Connection['waypoints'], useOriginal: boolean): string {
@@ -213,6 +213,10 @@ function connectionPath(waypoints: Connection['waypoints'], useOriginal: boolean
 
 function isInfraConnection(element: Element): element is InfraConnection {
   return element.businessObject?.kind === 'communication' || element.businessObject?.kind === 'noteAttachment';
+}
+
+function isInfraConnectionLabel(element: Element): element is Shape & { businessObject: InfraConnection['businessObject'] } {
+  return Boolean(element.labelTarget && isInfraConnection(element.labelTarget));
 }
 
 export function getLabelPoint(waypoints: readonly { x: number; y: number }[]): { x: number; y: number } {

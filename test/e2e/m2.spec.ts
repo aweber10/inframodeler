@@ -21,7 +21,7 @@ test('saves and reopens a diagram in browser mode', async ({ page }) => {
   for await (const chunk of stream) chunks.push(Buffer.from(chunk));
   const contents = Buffer.concat(chunks).toString('utf8');
   expect(download.suggestedFilename()).toBe('beispieldiagramm.imod.json');
-  expect(JSON.parse(contents)).toMatchObject({ format: 'inframodeler', formatVersion: 1, title: 'Beispieldiagramm' });
+  expect(JSON.parse(contents)).toMatchObject({ format: 'inframodeler', formatVersion: 2, title: 'Beispieldiagramm' });
 
   await page.locator('[data-app-action="new"]').click();
   await expect(page.locator('.djs-shape')).toHaveCount(0);

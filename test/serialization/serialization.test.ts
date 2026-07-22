@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { DiagramFileError, NewerFormatVersionError } from '../../src/app/serialization/errors';
-import { FORMAT_NAME, type DiagramFile } from '../../src/app/serialization/format';
+import { CURRENT_FORMAT_VERSION, FORMAT_NAME, type DiagramFile } from '../../src/app/serialization/format';
 import { parseDiagramFile } from '../../src/app/serialization/parse';
 import { stringifyDiagramFile } from '../../src/app/serialization/stringify';
 
 const FILE: DiagramFile = {
   format: FORMAT_NAME,
-  formatVersion: 1,
+  formatVersion: CURRENT_FORMAT_VERSION,
   title: 'Webshop',
   elements: [
     { id: 'module_2', type: 'module', name: 'Shop', parent: 'server_1', x: 30, y: 40, w: 156, h: 46 },
@@ -43,13 +43,33 @@ describe('diagram serialization', () => {
     expect(output).toContain('"customElement": 2');
   });
 
+  it('migrates v1 connections and preserves routing metadata', () => {
+    const source = JSON.stringify({
+      ...FILE,
+      formatVersion: 1,
+      connections: [{
+        id: 'connection_1', source: 'module_2', target: 'server_1', kind: 'communication', label: 'HTTPS',
+        waypoints: [{ x: 0, y: 0 }, { x: 10, y: 0 }]
+      }]
+    });
+    const migrated = parseDiagramFile(source);
+    expect(migrated.formatVersion).toBe(CURRENT_FORMAT_VERSION);
+    expect(migrated.connections[0]).toMatchObject({ pinnedRouting: false });
+
+    migrated.connections[0]!.pinnedRouting = true;
+    migrated.connections[0]!.labelPosition = { x: 25, y: 30 };
+    expect(parseDiagramFile(stringifyDiagramFile(migrated)).connections[0]).toMatchObject({
+      pinnedRouting: true,
+      labelPosition: { x: 25, y: 30 }
+    });
+  });
+
   it('reports malformed JSON with line and column', () => {
     expect(() => parseDiagramFile('{\n  "format":')).toThrow(/Zeile 2, Spalte/);
   });
 
   it('rejects a newer format version', () => {
-    const source = JSON.stringify({ ...FILE, formatVersion: 2 });
-    expect(() => parseDiagramFile(source)).toThrow(NewerFormatVersionError);
+    expect(() => parseDiagramFile(JSON.stringify({ ...FILE, formatVersion: 3 }))).toThrow(NewerFormatVersionError);
   });
 
   it('rejects invalid references without accepting partial data', () => {

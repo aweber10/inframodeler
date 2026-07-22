@@ -30,6 +30,8 @@ export function exportDiagram(
         target: connection.target.id,
         kind: connection.businessObject.kind,
         label: connection.businessObject.label ?? '',
+        pinnedRouting: connection.businessObject.pinnedRouting ?? false,
+        labelPosition: connection.businessObject.labelPosition,
         waypoints: connection.waypoints.map((point, index) => ({
           x: point.x,
           y: point.y,

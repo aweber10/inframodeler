@@ -1,7 +1,7 @@
 import type { InfraConnectionKind, InfraType } from '../../editor/infra/meta/types';
 
 export const FORMAT_NAME = 'inframodeler';
-export const CURRENT_FORMAT_VERSION = 1;
+export const CURRENT_FORMAT_VERSION = 2;
 
 export type ExtensionFields = Record<string, unknown>;
 
@@ -32,6 +32,8 @@ export interface DiagramConnectionRecord {
   target: string;
   kind: InfraConnectionKind;
   label: string;
+  pinnedRouting?: boolean;
+  labelPosition?: { x: number; y: number };
   waypoints: DiagramPoint[];
   extensions?: ExtensionFields;
 }

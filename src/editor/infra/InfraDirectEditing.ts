@@ -42,6 +42,7 @@ export default class InfraDirectEditing {
   }
 
   activate(element: Element): EditingContext | undefined {
+    if (element.labelTarget && isConnection(element.labelTarget)) return this.connectionContext(element.labelTarget, element);
     if (isConnection(element)) return this.connectionContext(element);
     if (!isInfraType(element.businessObject?.type)) return undefined;
 
@@ -66,6 +67,7 @@ export default class InfraDirectEditing {
   }
 
   update(element: InfraShape | InfraConnection, value: string): void {
+    if (element.labelTarget && isConnection(element.labelTarget)) element = element.labelTarget;
     const trimmed = value.trim();
     if (!isConnection(element) && !trimmed) return;
     this.commandStack.execute('infra.updateText', {
@@ -74,9 +76,11 @@ export default class InfraDirectEditing {
     } satisfies Parameters<UpdateTextHandler['execute']>[0]);
   }
 
-  private connectionContext(connection: InfraConnection): EditingContext | undefined {
+  private connectionContext(connection: InfraConnection, labelShape?: Element): EditingContext | undefined {
     if (connection.businessObject.kind === 'noteAttachment') return undefined;
-    const point = getLabelPoint(connection.waypoints);
+    const point = labelShape && 'width' in labelShape
+      ? { x: labelShape.x + labelShape.width / 2, y: labelShape.y + labelShape.height / 2 }
+      : getLabelPoint(connection.waypoints);
     const viewbox = this.canvas.viewbox();
     const zoom = this.canvas.zoom();
     const absolute = {

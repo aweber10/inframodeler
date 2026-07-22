@@ -7,6 +7,7 @@ import CopyPasteModule from 'diagram-js/lib/features/copy-paste';
 import CreateModule from 'diagram-js/lib/features/create';
 import EditorActionsModule from 'diagram-js/lib/features/editor-actions';
 import KeyboardModule from 'diagram-js/lib/features/keyboard';
+import LabelSupportModule from 'diagram-js/lib/features/label-support';
 import LassoToolModule from 'diagram-js/lib/features/lasso-tool';
 import ModelingModule from 'diagram-js/lib/features/modeling';
 import MoveModule from 'diagram-js/lib/features/move';
@@ -38,6 +39,7 @@ export function createInfraModeler(container: HTMLElement): Diagram {
       PaletteModule,
       EditorActionsModule,
       KeyboardModule,
+      LabelSupportModule,
       MoveCanvasModule,
       ZoomScrollModule,
       InfraCoreModule

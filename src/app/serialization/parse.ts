@@ -13,7 +13,7 @@ import { migrateDiagramFile } from './migrate';
 
 const ROOT_KEYS = new Set(['format', 'formatVersion', 'title', 'elements', 'connections']);
 const ELEMENT_KEYS = new Set(['id', 'type', 'name', 'parent', 'x', 'y', 'w', 'h']);
-const CONNECTION_KEYS = new Set(['id', 'source', 'target', 'kind', 'label', 'waypoints']);
+const CONNECTION_KEYS = new Set(['id', 'source', 'target', 'kind', 'label', 'pinnedRouting', 'labelPosition', 'waypoints']);
 const POINT_KEYS = new Set(['x', 'y']);
 
 export function parseDiagramFile(source: string): DiagramFile {
@@ -74,11 +74,18 @@ function parseConnection(value: unknown, index: number): DiagramConnectionRecord
     target: nonEmptyString(item.target, `${path}.target`),
     kind: item.kind,
     label: string(item.label, `${path}.label`),
+    ...(item.pinnedRouting === undefined ? {} : { pinnedRouting: boolean(item.pinnedRouting, `${path}.pinnedRouting`) }),
+    ...(item.labelPosition === undefined ? {} : { labelPosition: parsePoint(item.labelPosition, `${path}.labelPosition`) }),
     waypoints: array(item.waypoints, `${path}.waypoints`).map((point, pointIndex) =>
       parsePoint(point, `${path}.waypoints[${pointIndex}]`)
     ),
     extensions: extras(item, CONNECTION_KEYS)
   };
+}
+
+function boolean(value: unknown, path: string): boolean {
+  if (typeof value !== 'boolean') throw new DiagramFileError('Boolescher Wert erwartet.', path);
+  return value;
 }
 
 function parsePoint(value: unknown, path: string): DiagramPoint {

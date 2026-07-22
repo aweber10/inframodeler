@@ -25,6 +25,8 @@ export type InfraConnectionKind = 'communication' | 'noteAttachment';
 export interface InfraConnectionBusinessObject {
   kind: InfraConnectionKind;
   label?: string;
+  pinnedRouting?: boolean;
+  labelPosition?: { x: number; y: number };
   extensions?: Record<string, unknown>;
   waypointExtensions?: Array<Record<string, unknown> | undefined>;
 }

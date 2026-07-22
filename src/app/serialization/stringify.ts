@@ -39,6 +39,8 @@ function normalizeConnection(connection: DiagramConnectionRecord) {
     target: connection.target,
     kind: connection.kind,
     label: connection.label,
+    ...(connection.pinnedRouting === undefined ? {} : { pinnedRouting: connection.pinnedRouting }),
+    ...(connection.labelPosition ? { labelPosition: normalizePoint(connection.labelPosition) } : {}),
     waypoints: connection.waypoints.map(normalizePoint),
     ...sortedExtensions(connection.extensions)
   };

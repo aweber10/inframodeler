@@ -41,6 +41,8 @@ export default class InfraElementFactory extends ElementFactory {
       businessObject: {
         kind: businessObject.kind ?? 'communication',
         label: businessObject.label ?? '',
+        pinnedRouting: businessObject.pinnedRouting ?? false,
+        labelPosition: businessObject.labelPosition,
         extensions: businessObject.extensions,
         waypointExtensions: businessObject.waypointExtensions
       }

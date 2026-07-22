@@ -104,7 +104,7 @@ function layoutManhattanConnection(
     ? repairConnection(source, target, start, end, connection.waypoints, layoutHints)
     : connectRectangles(source, target, start, end, layoutHints));
 
-  if (!elementRegistry) return waypoints;
+  if (!elementRegistry || connection.businessObject?.pinnedRouting) return waypoints;
 
   const obstacles = obstaclesFor(elementRegistry, source, target);
   if (!findBlockingObstacle(waypoints, obstacles)) return waypoints;

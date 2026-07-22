@@ -35,7 +35,7 @@ describe('InfraElementFactory', () => {
       label: 'JDBC'
     });
 
-    expect(connection.businessObject).toEqual({ kind: 'communication', label: 'JDBC' });
+    expect(connection.businessObject).toMatchObject({ kind: 'communication', label: 'JDBC', pinnedRouting: false });
   });
 
   it('continues type-specific IDs after imported IDs', () => {
