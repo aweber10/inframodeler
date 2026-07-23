@@ -21,7 +21,7 @@ test('saves and reopens a diagram in browser mode', async ({ page }) => {
   for await (const chunk of stream) chunks.push(Buffer.from(chunk));
   const contents = Buffer.concat(chunks).toString('utf8');
   expect(download.suggestedFilename()).toBe('beispieldiagramm.imod.json');
-  expect(JSON.parse(contents)).toMatchObject({ format: 'inframodeler', formatVersion: 2, title: 'Beispieldiagramm' });
+  expect(JSON.parse(contents)).toMatchObject({ format: 'inframodeler', formatVersion: 3, title: 'Beispieldiagramm' });
 
   await page.locator('[data-app-action="new"]').click();
   await expect(page.locator('.djs-shape')).toHaveCount(0);
@@ -203,4 +203,49 @@ test('resizes containers from corner handles', async ({ page }) => {
 
   await expect.poll(async () => Number(await serverHit.getAttribute('width'))).toBeGreaterThan(initialWidth);
   await expect.poll(async () => Number(await serverHit.getAttribute('height'))).toBeGreaterThan(initialHeight);
+});
+
+test('keeps manually resized containers above their user minimum', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('[data-app-action="example"]').click();
+
+  const server = page.locator('[data-element-id="server_app"]');
+  const serverHit = server.locator(':scope > .djs-hit');
+  await serverHit.click({ position: { x: 45, y: 22 }, force: true });
+  const handle = await page.locator('.djs-resizer-se .djs-resizer-hit').boundingBox();
+  await page.mouse.move(handle!.x + handle!.width / 2, handle!.y + handle!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(handle!.x + handle!.width / 2 + 80, handle!.y + handle!.height / 2 + 60, { steps: 5 });
+  await page.mouse.up();
+  const manualWidth = Number(await serverHit.getAttribute('width'));
+  const manualHeight = Number(await serverHit.getAttribute('height'));
+
+  await serverHit.click({ position: { x: 45, y: 22 }, force: true });
+  await page.locator('.djs-context-pad [data-action="append.db"]').click();
+  const database = page.locator('.djs-shape').filter({ hasText: 'Datenbank' });
+  await database.locator('.djs-hit').click({ force: true });
+  await page.locator('.djs-context-pad [data-action="delete"]').click();
+
+  expect(Number(await serverHit.getAttribute('width'))).toBeGreaterThanOrEqual(manualWidth);
+  expect(Number(await serverHit.getAttribute('height'))).toBeGreaterThanOrEqual(manualHeight);
+});
+
+test('moves connection labels without resizing their container', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('[data-app-action="example"]').click();
+
+  const zone = page.locator('[data-element-id="zone_intranet"]');
+  const zoneHit = zone.locator(':scope > .djs-hit');
+  const initialWidth = Number(await zoneHit.getAttribute('width'));
+  const initialHeight = Number(await zoneHit.getAttribute('height'));
+  const label = page.locator('.djs-shape').filter({ hasText: 'HTTPS' }).first();
+  const box = await label.boundingBox();
+  expect(box).toBeTruthy();
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box!.x + box!.width / 2 + 35, box!.y + box!.height / 2 + 25, { steps: 5 });
+  await page.mouse.up();
+
+  expect(Number(await zoneHit.getAttribute('width'))).toBe(initialWidth);
+  expect(Number(await zoneHit.getAttribute('height'))).toBe(initialHeight);
 });

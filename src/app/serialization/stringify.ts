@@ -28,6 +28,8 @@ function normalizeElement(element: DiagramElementRecord) {
     y: element.y,
     w: element.w,
     h: element.h,
+    ...(element.manualMinWidth === undefined ? {} : { manualMinWidth: element.manualMinWidth }),
+    ...(element.manualMinHeight === undefined ? {} : { manualMinHeight: element.manualMinHeight }),
     ...sortedExtensions(element.extensions)
   };
 }

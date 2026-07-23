@@ -1,7 +1,7 @@
 import type { InfraConnectionKind, InfraType } from '../../editor/infra/meta/types';
 
 export const FORMAT_NAME = 'inframodeler';
-export const CURRENT_FORMAT_VERSION = 2;
+export const CURRENT_FORMAT_VERSION = 3;
 
 export type ExtensionFields = Record<string, unknown>;
 
@@ -23,6 +23,8 @@ export interface DiagramElementRecord {
   y: number;
   w: number;
   h: number;
+  manualMinWidth?: number;
+  manualMinHeight?: number;
   extensions?: ExtensionFields;
 }
 

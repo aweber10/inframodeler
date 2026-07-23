@@ -55,6 +55,7 @@ describe('diagram serialization', () => {
     const migrated = parseDiagramFile(source);
     expect(migrated.formatVersion).toBe(CURRENT_FORMAT_VERSION);
     expect(migrated.connections[0]).toMatchObject({ pinnedRouting: false });
+    expect(migrated.elements.find(({ id }) => id === 'server_1')).toMatchObject({ manualMinWidth: 230, manualMinHeight: 130 });
 
     migrated.connections[0]!.pinnedRouting = true;
     migrated.connections[0]!.labelPosition = { x: 25, y: 30 };
@@ -64,12 +65,26 @@ describe('diagram serialization', () => {
     });
   });
 
+  it('preserves explicit manual container minimum dimensions', () => {
+    const file: DiagramFile = {
+      ...FILE,
+      elements: [{
+        id: 'server_1', type: 'server', name: 'Server', x: 0, y: 0, w: 500, h: 300,
+        manualMinWidth: 480, manualMinHeight: 280
+      }]
+    };
+    expect(parseDiagramFile(stringifyDiagramFile(file)).elements[0]).toMatchObject({
+      manualMinWidth: 480,
+      manualMinHeight: 280
+    });
+  });
+
   it('reports malformed JSON with line and column', () => {
     expect(() => parseDiagramFile('{\n  "format":')).toThrow(/Zeile 2, Spalte/);
   });
 
   it('rejects a newer format version', () => {
-    expect(() => parseDiagramFile(JSON.stringify({ ...FILE, formatVersion: 3 }))).toThrow(NewerFormatVersionError);
+    expect(() => parseDiagramFile(JSON.stringify({ ...FILE, formatVersion: 4 }))).toThrow(NewerFormatVersionError);
   });
 
   it('rejects invalid references without accepting partial data', () => {

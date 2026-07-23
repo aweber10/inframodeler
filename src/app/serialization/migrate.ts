@@ -24,5 +24,18 @@ function migrateOneVersion(file: DiagramFile): DiagramFile {
       connections: file.connections.map((connection) => ({ ...connection, pinnedRouting: connection.pinnedRouting ?? false }))
     };
   }
+  if (file.formatVersion === 2) {
+    return {
+      ...file,
+      formatVersion: 3,
+      elements: file.elements.map((element) => isContainer(element.type)
+        ? { ...element, manualMinWidth: element.w, manualMinHeight: element.h }
+        : element)
+    };
+  }
   throw new DiagramFileError(`Keine Migration für Formatversion ${file.formatVersion} registriert.`);
+}
+
+function isContainer(type: string): boolean {
+  return type === 'zone' || type === 'server' || type === 'syssoft';
 }

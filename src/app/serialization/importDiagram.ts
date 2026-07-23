@@ -50,6 +50,8 @@ export function importDiagram(diagram: Diagram, file: DiagramFile, options: Impo
         businessObject: {
           type: record.type,
           name: record.name,
+          manualMinWidth: record.manualMinWidth,
+          manualMinHeight: record.manualMinHeight,
           extensions: record.extensions
         }
       });

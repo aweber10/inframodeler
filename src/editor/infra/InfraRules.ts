@@ -31,6 +31,7 @@ interface ResizeContext {
 }
 
 export function canPlace(target: Parent | null, rawShape: Shape): boolean {
+  if (target?.labelTarget) return false;
   const shape = rawShape as InfraShape;
   const childType = shape.businessObject?.type;
   if (!isInfraType(childType)) return false;
@@ -71,7 +72,7 @@ export default class InfraRules extends RuleProvider {
   override init(): void {
     this.addRule('shape.create', ({ target, shape }: CreateContext) => canPlace(target, shape));
     this.addRule('elements.move', ({ target, shapes }: MoveContext) =>
-      shapes.every((shape) => shape.labelTarget || canPlace(target, shape))
+      shapes.every((shape) => shape.labelTarget ? !target || target === shape.parent : canPlace(target, shape))
     );
     this.addRule('connection.create', ({ source, target }: ConnectionContext) =>
       canConnect(source, target)

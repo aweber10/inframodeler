@@ -53,6 +53,8 @@ export function exportDiagram(
       y: shape.y,
       w: shape.width,
       h: shape.height,
+      manualMinWidth: shape.businessObject.manualMinWidth,
+      manualMinHeight: shape.businessObject.manualMinHeight,
       extensions: shape.businessObject.extensions
     });
   }

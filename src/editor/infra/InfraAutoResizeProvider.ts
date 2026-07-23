@@ -13,6 +13,8 @@ export default class InfraAutoResizeProvider extends AutoResizeProvider {
 
   override canResize(_elements: Shape[], target: Shape): boolean {
     const type = target?.businessObject?.type;
-    return isInfraType(type) && type in CONTAINER_PADDING;
+    return _elements.length > 0
+      && _elements.every((element) => !element.labelTarget && isInfraType(element.businessObject?.type))
+      && isInfraType(type) && type in CONTAINER_PADDING;
   }
 }

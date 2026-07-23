@@ -22,6 +22,11 @@ describe('InfraRules placement', () => {
     expect(canPlace(null, shape('module'))).toBe(true);
     expect(canPlace({} as Parent, shape('syssoft'))).toBe(true);
   });
+
+  it('does not allow regular shapes to be dropped on connection labels', () => {
+    const label = { labelTarget: {}, businessObject: {} } as unknown as Parent;
+    expect(canPlace(label, shape('module'))).toBe(false);
+  });
 });
 
 describe('InfraRules connections', () => {

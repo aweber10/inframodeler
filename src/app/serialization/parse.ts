@@ -12,7 +12,7 @@ import {
 import { migrateDiagramFile } from './migrate';
 
 const ROOT_KEYS = new Set(['format', 'formatVersion', 'title', 'elements', 'connections']);
-const ELEMENT_KEYS = new Set(['id', 'type', 'name', 'parent', 'x', 'y', 'w', 'h']);
+const ELEMENT_KEYS = new Set(['id', 'type', 'name', 'parent', 'x', 'y', 'w', 'h', 'manualMinWidth', 'manualMinHeight']);
 const CONNECTION_KEYS = new Set(['id', 'source', 'target', 'kind', 'label', 'pinnedRouting', 'labelPosition', 'waypoints']);
 const POINT_KEYS = new Set(['x', 'y']);
 
@@ -57,6 +57,8 @@ function parseElement(value: unknown, index: number): DiagramElementRecord {
     y: finiteNumber(item.y, `${path}.y`),
     w: positiveNumber(item.w, `${path}.w`),
     h: positiveNumber(item.h, `${path}.h`),
+    ...(item.manualMinWidth === undefined ? {} : { manualMinWidth: positiveNumber(item.manualMinWidth, `${path}.manualMinWidth`) }),
+    ...(item.manualMinHeight === undefined ? {} : { manualMinHeight: positiveNumber(item.manualMinHeight, `${path}.manualMinHeight`) }),
     extensions: extras(item, ELEMENT_KEYS)
   };
 }

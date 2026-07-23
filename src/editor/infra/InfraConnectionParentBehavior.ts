@@ -56,11 +56,12 @@ export default class InfraConnectionParentBehavior extends CommandInterceptor {
     });
 
     this.postExecuted('shape.move', ({ context }: { context: MoveShapeContext }) => {
+      if (context.shape.labelTarget) return;
       this.reparentConnectionsOf([context.shape]);
     });
 
     this.postExecuted('elements.move', ({ context }: { context: MoveElementsContext }) => {
-      this.reparentConnectionsOf(context.shapes ?? []);
+      this.reparentConnectionsOf((context.shapes ?? []).filter((shape) => !shape.labelTarget));
     });
   }
 

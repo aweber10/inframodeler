@@ -17,6 +17,8 @@ export type InfraType = (typeof INFRA_TYPES)[number];
 export interface InfraBusinessObject {
   type: InfraType;
   name: string;
+  manualMinWidth?: number;
+  manualMinHeight?: number;
   extensions?: Record<string, unknown>;
 }
 

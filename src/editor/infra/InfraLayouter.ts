@@ -100,17 +100,20 @@ function layoutManhattanConnection(
     connectionEnd: Boolean(hints.connectionEnd)
   };
 
-  const waypoints = simplifyWaypoints(connection.waypoints?.length
+  const waypoints = connection.waypoints?.length
     ? repairConnection(source, target, start, end, connection.waypoints, layoutHints)
-    : connectRectangles(source, target, start, end, layoutHints));
+    : connectRectangles(source, target, start, end, layoutHints);
 
-  if (!elementRegistry || connection.businessObject?.pinnedRouting) return waypoints;
+  if (connection.businessObject?.pinnedRouting) return waypoints;
+
+  const simplified = simplifyWaypoints(waypoints);
+  if (!elementRegistry) return simplified;
 
   const obstacles = obstaclesFor(elementRegistry, source, target);
-  if (!findBlockingObstacle(waypoints, obstacles)) return waypoints;
+  if (!findBlockingObstacle(simplified, obstacles)) return simplified;
 
-  const nudged = nudgeMiddleSegment(waypoints, obstacles);
-  return nudged && !findBlockingObstacle(nudged, obstacles) ? simplifyWaypoints(nudged) : waypoints;
+  const nudged = nudgeMiddleSegment(simplified, obstacles);
+  return nudged && !findBlockingObstacle(nudged, obstacles) ? simplifyWaypoints(nudged) : simplified;
 }
 
 export default class InfraLayouter extends BaseLayouter {

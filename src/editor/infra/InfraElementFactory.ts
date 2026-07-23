@@ -19,6 +19,8 @@ export default class InfraElementFactory extends ElementFactory {
     const businessObject: InfraBusinessObject = {
       type,
       name: attrs.businessObject?.name ?? definition.defaultName,
+      manualMinWidth: attrs.businessObject?.manualMinWidth,
+      manualMinHeight: attrs.businessObject?.manualMinHeight,
       extensions: attrs.businessObject?.extensions
     };
 

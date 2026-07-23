@@ -38,7 +38,7 @@ export default class InfraFitBehavior extends CommandInterceptor {
     });
 
     this.preExecute('shape.delete', ({ context }: { context: DeleteShapeContext }) => {
-      if (context.shape.parent && isShape(context.shape.parent)) {
+      if (isInfraShape(context.shape) && context.shape.parent && isInfraShape(context.shape.parent)) {
         context.infraOldParent = context.shape.parent;
       }
     });
@@ -54,6 +54,7 @@ export default class InfraFitBehavior extends CommandInterceptor {
     });
 
     this.postExecute('infra.updateText', ({ context }: { context: TextContext }) => {
+      if (!isInfraShape(context.element)) return;
       const parent = context.element.parent;
       if (parent && isShape(parent)) this.fit(parent);
     });
@@ -69,14 +70,15 @@ export default class InfraFitBehavior extends CommandInterceptor {
 
     const padding = CONTAINER_PADDING[type as keyof typeof CONTAINER_PADDING];
     const definition = TYPE_DEFINITIONS[type];
-    const children = container.children.filter(isShape);
+    const children = container.children.filter(isInfraShape);
     const right = children.length ? Math.max(...children.map((child) => child.x + child.width)) : container.x;
     const bottom = children.length ? Math.max(...children.map((child) => child.y + child.height)) : container.y;
     const width = Math.max(
       definition.width,
+      container.businessObject.manualMinWidth ?? 0,
       right - container.x + padding.side + (type === 'server' ? 12 : 0)
     );
-    const height = Math.max(definition.height, bottom - container.y + padding.bottom);
+    const height = Math.max(definition.height, container.businessObject.manualMinHeight ?? 0, bottom - container.y + padding.bottom);
 
     if (width !== container.width || height !== container.height) {
       this.modeling.resizeShape(container, { x: container.x, y: container.y, width, height }, undefined, {
@@ -89,9 +91,13 @@ export default class InfraFitBehavior extends CommandInterceptor {
 }
 
 function uniqueContainerParents(elements: Element[]): Shape[] {
-  return [...new Set(elements.map((element) => element.parent).filter(isShape))];
+  return [...new Set(elements.filter(isInfraShape).map((element) => element.parent).filter(isInfraShape))];
 }
 
 function isShape(element: Element | undefined): element is Shape {
   return Boolean(element && 'width' in element && 'height' in element);
+}
+
+function isInfraShape(element: Element | undefined): element is Shape {
+  return Boolean(isShape(element) && !element.labelTarget && isInfraType(element.businessObject?.type));
 }

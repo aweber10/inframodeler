@@ -15,6 +15,11 @@ interface UpdateWaypointsContext {
   oldPinnedRouting?: boolean;
 }
 
+interface ReconnectContext {
+  connection: Connection;
+  oldPinnedRouting?: boolean;
+}
+
 interface CreateConnectionContext {
   connection: Connection;
   hints?: { skipAutomaticRouting?: boolean };
@@ -24,8 +29,6 @@ interface MoveShapeContext {
   shape: Shape;
   oldLabelPosition?: { x: number; y: number };
 }
-
-const MODEL_CHANGES = ['connection.create', 'connection.layout', 'shape.move', 'elements.move', 'shape.resize'];
 
 export default class InfraRoutingBehavior extends CommandInterceptor {
   static override $inject = ['eventBus', 'elementRegistry', 'modeling', 'editorActions', 'selection'];
@@ -39,16 +42,21 @@ export default class InfraRoutingBehavior extends CommandInterceptor {
   ) {
     super(eventBus);
 
+    eventBus.on('shape.move.move', 750, (event: { hover?: Element }) => {
+      if (event.hover?.labelTarget) event.hover = event.hover.parent;
+    });
+    eventBus.on('shape.move.move', 400, ({ context }: { context: { shape?: Shape; target?: Element; canExecute?: boolean } }) => {
+      if (!context.shape?.labelTarget) return;
+      context.target = context.shape.parent;
+      context.canExecute = true;
+    });
+
     this.postExecute('connection.create', ({ context }: { context: CreateConnectionContext }) => {
       if (!context.hints?.skipAutomaticRouting) this.reroute([context.connection]);
       this.createLabel(context.connection);
     });
     this.postExecute('infra.updateText', ({ context }: { context: { element: Element } }) => {
       if (isConnection(context.element)) this.createLabel(context.element);
-    });
-    this.postExecuted(MODEL_CHANGES, () => this.separateConnections());
-    this.postExecuted('connection.updateWaypoints', ({ context }: { context: UpdateWaypointsContext }) => {
-      if (!context.hints?.parallelSeparation) this.separateConnections();
     });
     this.execute('connection.updateWaypoints', ({ context }: { context: UpdateWaypointsContext }) => {
       const connection = context.connection;
@@ -59,6 +67,16 @@ export default class InfraRoutingBehavior extends CommandInterceptor {
     });
     this.revert('connection.updateWaypoints', ({ context }: { context: UpdateWaypointsContext }) => {
       if (context.connection?.businessObject && context.oldPinnedRouting !== undefined) {
+        context.connection.businessObject.pinnedRouting = context.oldPinnedRouting;
+      }
+    });
+    this.execute('connection.reconnect', ({ context }: { context: ReconnectContext }) => {
+      if (!context.connection.businessObject) return;
+      context.oldPinnedRouting = Boolean(context.connection.businessObject.pinnedRouting);
+      context.connection.businessObject.pinnedRouting = true;
+    });
+    this.revert('connection.reconnect', ({ context }: { context: ReconnectContext }) => {
+      if (context.connection.businessObject && context.oldPinnedRouting !== undefined) {
         context.connection.businessObject.pinnedRouting = context.oldPinnedRouting;
       }
     });
@@ -81,6 +99,7 @@ export default class InfraRoutingBehavior extends CommandInterceptor {
         this.modeling.updateWaypoints(connection, waypoints, { automaticRouting: true, unpinRouting: explicitlySelected.has(connection) });
       }
     }
+    this.separateConnections();
   }
 
   private separateConnections(): void {
