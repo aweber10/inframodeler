@@ -6,10 +6,10 @@ import { computeDockingAnchor, findBlockingObstacle, resolveDockingSides, type F
 import { routeOrthogonal, type ExistingSegment } from '../src/editor/infra/orthoRouter';
 import { parseDiagramFile } from '../src/app/serialization/parse';
 
-const fixture = parseDiagramFile(readFileSync(new URL('./fixtures/json/deployment_prod.imod.json', import.meta.url), 'utf8'));
+const fixture = parseDiagramFile(readFileSync(new URL('./fixtures/json/routing_landscape.imod.json', import.meta.url), 'utf8'));
 type FixtureRect = Rect & { id: string; parent?: string };
 
-describe('deployment production routing fixture', () => {
+describe('anonymized routing landscape fixture', () => {
   it('reroutes every connection without obstacles or more than six bends', () => {
     const elements = new Map(fixture.elements.map((element) => [element.id, {
       id: element.id, parent: element.parent, x: element.x, y: element.y, width: element.w, height: element.h

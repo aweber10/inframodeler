@@ -1,0 +1,135 @@
+@startuml
+
+' Fiktive Systemübersicht - ausschließlich als Testfixture
+' Alle Organisations- und Systemnamen sind frei erfunden
+
+skinparam monochrome false
+skinparam componentStyle uml2
+skinparam legendBackgroundColor #Orange/Yellow
+
+' Für eher geschwungene Verbindungen wie im Export:
+'skinparam linetype polyline
+
+title
+ <u>Orion Platform - Production</u>
+ System Landscape
+end title
+
+frame "Orion Platform" as sam {
+
+  actor Operator
+
+  note right of User
+    Internal users
+    Access via the <b>example network</b>
+  end note
+
+  node Workstation {
+    [Browser Client]
+  }
+
+  Operator --> [Browser Client]
+
+  node edge-01.example.test as webseal {
+    [Edge Proxy]
+  }
+
+  note right of webseal
+    Authentifizierung per PKI
+  end note
+
+  node "app-01.example.test" as apphost {
+
+    [File Transfer Agent] as evo
+
+    frame "Example Runtime" as wlp {
+      [Orion UI]
+      [Orion API]
+      [Orion Analytics]
+    }
+
+    node "db-01.example.test" as dbhost {
+      database "Orion Database" as db
+    }
+
+    db <--> evo
+  }
+}
+
+frame "Internet" as internet {
+  actor ExternalUser
+  node "Partner Portal" as sales4
+  ExternalUser --> sales4 : HTTPS
+}
+
+frame "Systeme der Beispielgruppe A" as vw_systems {
+  node PartnerAlpha
+  node PartnerBeta
+  node PartnerGamma #Orange/Yellow
+  node "HR Platform" as saphr
+  node MessagingService
+  node CustomerPortal as kundencenter
+}
+
+frame "Systeme der Beispielgruppe B" as fs_systems {
+  node "Document Archive" as dsmg
+  node "Identity Service" as aditus
+  node "Contract Service" as leasing
+  node PartnerDelta
+  node AgreementStore
+  node "Service Hub" as servicefactory
+  node SportsPortal
+}
+
+' --- Schnittstellen / Gateways
+interface "Transfer Gateway" as rvs
+interface "Batch Exchange" as connectdirect
+interface "Partner API Gateway" as datapower_fs
+interface "Core API Gateway" as datapower_vw
+interface "Edge Integration" as rwil
+
+' --- Verbindungen (gemäß Export)
+[Browser Client] --> [Edge Proxy] : HTTPS
+[Edge Proxy] --> wlp : HTTPS
+
+[Orion UI] --> db : JDBC
+
+[Orion UI] --> saphr : RFC
+[Orion UI] --> MessagingService : AIS-API
+
+[Orion API] --> kundencenter : mail
+
+[Orion API] <--> datapower_vw : SOAP
+
+sales4 --> rwil : REST
+rwil --> [Reverse-Proxy]
+
+SportsPortal <..> rwil
+
+' Transfer gateways
+evo <--> rvs
+rvs --> leasing
+rvs <--> PartnerAlpha
+rvs <--> PartnerBeta
+rvs --> PartnerGamma
+rvs --> connectdirect
+connectdirect --> aditus
+connectdirect <..> dsmg
+
+' API gateways
+datapower_vw <--> datapower_fs : SOAP
+
+datapower_fs --> PartnerDelta : SOAP
+datapower_fs <..> AgreementStore : SOAP
+
+datapower_vw --> servicefactory
+
+' Layout-Hilfe (Internet rechts)
+sam --[hidden]- internet
+
+legend bottom right
+  Schnittstellen sind geplant
+  bzw. in Entwicklung
+endlegend
+
+@enduml

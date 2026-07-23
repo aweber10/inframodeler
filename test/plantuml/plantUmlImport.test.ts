@@ -7,19 +7,19 @@ import { parsePlantUml } from '../../src/app/import/plantuml/parser';
 import { stringifyDiagramFile } from '../../src/app/serialization/stringify';
 import { parseDiagramFile } from '../../src/app/serialization/parse';
 
-const fixture = readFileSync(fileURLToPath(new URL('../fixtures/plantuml/Kontext_und_Schnittstellen_PROD.pu', import.meta.url)), 'utf8');
+const fixture = readFileSync(fileURLToPath(new URL('../fixtures/plantuml/anonymized_system_landscape.pu', import.meta.url)), 'utf8');
 
 describe('PlantUML subset import', () => {
   it('parses aliases, notes, interfaces and bidirectional relations', () => {
     const document = parsePlantUml(fixture);
-    expect(document.title).toBe('Übersicht SAM - Prod / Kontext und Schnittstellen');
+    expect(document.title).toBe('Orion Platform - Production / System Landscape');
     expect(document.declarations.filter(({ kind }) => kind === 'interface')).toHaveLength(5);
     expect(document.notes).toHaveLength(2);
     expect(document.relations.some(({ bidirectional }) => bidirectional)).toBe(true);
     expect(document.relations.some(({ hidden }) => hidden)).toBe(true);
   });
 
-  it('maps the production context fixture deterministically', () => {
+  it('maps the anonymized system landscape deterministically', () => {
     const first = importPlantUml(fixture);
     const second = importPlantUml(fixture);
 
@@ -42,9 +42,9 @@ describe('PlantUML subset import', () => {
     expect(first.warnings.some(({ code }) => code === 'color-legend')).toBe(true);
 
     const db = first.file.elements.find(({ type }) => type === 'db')!;
-    const dbHost = first.file.elements.find(({ name }) => name === 'exa118r05s09.b2x.vwg')!;
+    const dbHost = first.file.elements.find(({ name }) => name === 'db-01.example.test')!;
     expect(db.parent).toBe(dbHost.id);
-    expect(dbHost.parent).toBe(first.file.elements.find(({ name }) => name === 'Schadenmanagementsystem SAM')!.id);
+    expect(dbHost.parent).toBe(first.file.elements.find(({ name }) => name === 'Orion Platform')!.id);
   });
 
   it('recognizes all supported PlantUML extensions', () => {

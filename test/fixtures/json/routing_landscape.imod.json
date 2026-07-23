@@ -1,12 +1,12 @@
 {
   "format": "inframodeler",
   "formatVersion": 1,
-  "title": "Übersicht SAM - Prod / Kontext und Schnittstellen",
+  "title": "Orion Platform - Production / System Landscape",
   "elements": [
     {
       "id": "actor_1",
       "type": "actor",
-      "name": "User",
+      "name": "Operator",
       "parent": "zone_1",
       "x": 98,
       "y": 100,
@@ -16,7 +16,7 @@
     {
       "id": "actor_2",
       "type": "actor",
-      "name": "Customer",
+      "name": "External User",
       "parent": "zone_2",
       "x": 764,
       "y": 100,
@@ -26,7 +26,7 @@
     {
       "id": "db_1",
       "type": "db",
-      "name": "SAMP",
+      "name": "Orion Database",
       "parent": "server_4",
       "x": 114,
       "y": 680,
@@ -36,7 +36,7 @@
     {
       "id": "esb_1",
       "type": "esb",
-      "name": "RVS",
+      "name": "Transfer Gateway",
       "x": 338.66666666666663,
       "y": 1308,
       "w": 240,
@@ -45,7 +45,7 @@
     {
       "id": "esb_2",
       "type": "esb",
-      "name": "Connect:Direct",
+      "name": "Batch Exchange",
       "x": 602.2222222222223,
       "y": 1420,
       "w": 240,
@@ -54,7 +54,7 @@
     {
       "id": "esb_3",
       "type": "esb",
-      "name": "DataPower (DE)",
+      "name": "Partner API Gateway",
       "x": 894.0000000000001,
       "y": 1420,
       "w": 240,
@@ -63,7 +63,7 @@
     {
       "id": "esb_4",
       "type": "esb",
-      "name": "DataPower VW",
+      "name": "Core API Gateway",
       "x": 701.3333333333334,
       "y": 826,
       "w": 240,
@@ -72,7 +72,7 @@
     {
       "id": "esb_5",
       "type": "esb",
-      "name": "RW.IL",
+      "name": "Edge Integration",
       "x": 666,
       "y": 572,
       "w": 240,
@@ -81,7 +81,7 @@
     {
       "id": "extsys_1",
       "type": "extsys",
-      "name": "4Sales Schadenmeldung",
+      "name": "Partner Portal",
       "parent": "zone_2",
       "x": 876,
       "y": 100,
@@ -91,7 +91,7 @@
     {
       "id": "module_1",
       "type": "module",
-      "name": "Web-Browser",
+      "name": "Browser Client",
       "parent": "server_1",
       "x": 226,
       "y": 136,
@@ -101,7 +101,7 @@
     {
       "id": "module_2",
       "type": "module",
-      "name": "Reverse-Proxy",
+      "name": "Edge Proxy",
       "parent": "server_2",
       "x": 114,
       "y": 314,
@@ -111,7 +111,7 @@
     {
       "id": "module_3",
       "type": "module",
-      "name": "rvsEvo (Station KAZ)",
+      "name": "File Transfer Agent",
       "parent": "server_3",
       "x": 392,
       "y": 314,
@@ -121,7 +121,7 @@
     {
       "id": "module_4",
       "type": "module",
-      "name": "SAM Web",
+      "name": "Orion UI",
       "parent": "syssoft_1",
       "x": 406,
       "y": 404,
@@ -131,7 +131,7 @@
     {
       "id": "module_5",
       "type": "module",
-      "name": "SAM REST",
+      "name": "Orion API",
       "parent": "syssoft_1",
       "x": 406,
       "y": 462,
@@ -141,7 +141,7 @@
     {
       "id": "module_6",
       "type": "module",
-      "name": "SAM Reporting",
+      "name": "Orion Analytics",
       "parent": "syssoft_1",
       "x": 406,
       "y": 520,
@@ -151,7 +151,7 @@
     {
       "id": "note_1",
       "type": "note",
-      "name": "BS/WOB\nZugriffe über das VW-Intranet",
+      "name": "Internal users\nAccess via the example network",
       "parent": "zone_1",
       "x": 197,
       "y": 4,
@@ -161,7 +161,7 @@
     {
       "id": "note_2",
       "type": "note",
-      "name": "Authentifizierung per PKI",
+      "name": "Certificate-based authentication",
       "parent": "zone_1",
       "x": 648,
       "y": 278,
@@ -171,7 +171,7 @@
     {
       "id": "note_3",
       "type": "note",
-      "name": "Schnittstellen sind geplant bzw. in Entwicklung",
+      "name": "Interfaces are planned or under development",
       "parent": "zone_3",
       "x": -132,
       "y": 1074,
@@ -181,7 +181,7 @@
     {
       "id": "server_1",
       "type": "server",
-      "name": "Client",
+      "name": "Workstation",
       "parent": "zone_1",
       "x": 210,
       "y": 100,
@@ -191,7 +191,7 @@
     {
       "id": "server_2",
       "type": "server",
-      "name": "sam.vw.vwg",
+      "name": "edge-01.example.test",
       "parent": "zone_1",
       "x": 98,
       "y": 278,
@@ -201,7 +201,7 @@
     {
       "id": "server_3",
       "type": "server",
-      "name": "lxf202p1077.wob.vw.vwg",
+      "name": "app-01.example.test",
       "parent": "zone_1",
       "x": 376,
       "y": 278,
@@ -211,7 +211,7 @@
     {
       "id": "server_4",
       "type": "server",
-      "name": "exa118r05s09.b2x.vwg",
+      "name": "db-01.example.test",
       "parent": "zone_1",
       "x": 98,
       "y": 644,
@@ -221,7 +221,7 @@
     {
       "id": "syssoft_1",
       "type": "syssoft",
-      "name": "Websphere Liberty Profile",
+      "name": "Example Runtime",
       "parent": "server_3",
       "x": 392,
       "y": 372,
@@ -231,7 +231,7 @@
     {
       "id": "umsystem_1",
       "type": "umsystem",
-      "name": "WandaGF",
+      "name": "Partner Alpha",
       "parent": "zone_3",
       "x": 98,
       "y": 962,
@@ -241,7 +241,7 @@
     {
       "id": "umsystem_10",
       "type": "umsystem",
-      "name": "uEKA",
+      "name": "Partner Delta",
       "parent": "zone_4",
       "x": 878,
       "y": 1074,
@@ -251,7 +251,7 @@
     {
       "id": "umsystem_11",
       "type": "umsystem",
-      "name": "zVertrag",
+      "name": "Agreement Store",
       "parent": "zone_4",
       "x": 654,
       "y": 1186,
@@ -261,7 +261,7 @@
     {
       "id": "umsystem_12",
       "type": "umsystem",
-      "name": "Service Factory",
+      "name": "Service Hub",
       "parent": "zone_4",
       "x": 878,
       "y": 1186,
@@ -271,7 +271,7 @@
     {
       "id": "umsystem_13",
       "type": "umsystem",
-      "name": "iSport",
+      "name": "Sports Portal",
       "parent": "zone_4",
       "x": 654,
       "y": 1298,
@@ -281,7 +281,7 @@
     {
       "id": "umsystem_2",
       "type": "umsystem",
-      "name": "PROFIS",
+      "name": "Partner Beta",
       "parent": "zone_3",
       "x": 322,
       "y": 962,
@@ -291,7 +291,7 @@
     {
       "id": "umsystem_3",
       "type": "umsystem",
-      "name": "GFT",
+      "name": "Partner Gamma",
       "parent": "zone_3",
       "x": 98,
       "y": 1074,
@@ -301,7 +301,7 @@
     {
       "id": "umsystem_4",
       "type": "umsystem",
-      "name": "SAP-IPS HR-VW",
+      "name": "HR Platform",
       "parent": "zone_3",
       "x": 322,
       "y": 1074,
@@ -311,7 +311,7 @@
     {
       "id": "umsystem_5",
       "type": "umsystem",
-      "name": "UMS",
+      "name": "Messaging Service",
       "parent": "zone_3",
       "x": 98,
       "y": 1186,
@@ -321,7 +321,7 @@
     {
       "id": "umsystem_6",
       "type": "umsystem",
-      "name": "Kundencenter",
+      "name": "Customer Portal",
       "parent": "zone_3",
       "x": 322,
       "y": 1186,
@@ -331,7 +331,7 @@
     {
       "id": "umsystem_7",
       "type": "umsystem",
-      "name": "DS MG / DS Prot",
+      "name": "Document Archive",
       "parent": "zone_4",
       "x": 654,
       "y": 962,
@@ -341,7 +341,7 @@
     {
       "id": "umsystem_8",
       "type": "umsystem",
-      "name": "Aditus IIQ",
+      "name": "Identity Service",
       "parent": "zone_4",
       "x": 878,
       "y": 962,
@@ -351,7 +351,7 @@
     {
       "id": "umsystem_9",
       "type": "umsystem",
-      "name": "WA-Leasing",
+      "name": "Contract Service",
       "parent": "zone_4",
       "x": 654,
       "y": 1074,
@@ -361,7 +361,7 @@
     {
       "id": "zone_1",
       "type": "zone",
-      "name": "Schadenmanagementsystem SAM",
+      "name": "Orion Platform",
       "x": 80,
       "y": 60,
       "w": 546,
@@ -370,7 +370,7 @@
     {
       "id": "zone_2",
       "type": "zone",
-      "name": "Internet",
+      "name": "Public Network",
       "x": 746,
       "y": 60,
       "w": 324,
@@ -379,7 +379,7 @@
     {
       "id": "zone_3",
       "type": "zone",
-      "name": "Systeme des VW-Konzerns",
+      "name": "Systeme der Beispielgruppe A",
       "x": 80,
       "y": 922,
       "w": 436,
@@ -388,7 +388,7 @@
     {
       "id": "zone_4",
       "type": "zone",
-      "name": "Systeme der FSAG",
+      "name": "Systeme der Beispielgruppe B",
       "x": 636,
       "y": 922,
       "w": 436,
